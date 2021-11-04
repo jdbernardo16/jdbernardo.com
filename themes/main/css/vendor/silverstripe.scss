@@ -1,0 +1,146 @@
+/*
+* Silverstripe CMS Login/Forgot
+*/
+// #MemberLoginForm_LoginForm,
+// #MemberLoginForm_LostPasswordForm,
+// #LostPasswordForm_lostPasswordForm {
+//     padding: 90px 32px 60px;
+// }
+
+// #MemberLoginForm_LoginForm_Password_Holder,
+// #LostPasswordForm_lostPasswordForm_Email_Holder,
+// #ForgotPassword {
+//     margin-top: 15px;
+// }
+
+
+// // input text
+// #MemberLoginForm_LoginForm_Email,
+// #MemberLoginForm_LoginForm_Password,
+// #MemberLoginForm_LostPasswordForm_Email,
+// #LostPasswordForm_lostPasswordForm_Email {
+//     margin-top: 5px;
+//     padding: 8px 16px;
+//     border-radius: 20px;
+//     border: 1px solid #cdcdcd;
+//     background: #fff;
+//     outline: none;
+//     width: 100%;
+//     box-sizing: border-box;
+//     box-shadow: 0px 2px 0px rgba(0,0,0,0.05);
+// }
+
+// // label
+// #MemberLoginForm_LoginForm_Email_Holder label,
+// #MemberLoginForm_LoginForm_Password_Holder label {
+//     color: #c4c4c4;
+// }
+
+// // button
+// #MemberLoginForm_LoginForm_action_doLogin,
+// #MemberLoginForm_LostPasswordForm_action_forgotPassword,
+// #LostPasswordForm_lostPasswordForm_action_forgotPassword {
+//     padding: 8px 24px;
+//     margin: 10px auto;
+//     outline: none;
+//     cursor: pointer;
+//     border: none;
+//     background: $color--primary;
+//     color: #fff;
+//     font-size: 14px;
+//     text-align: center;
+//     box-shadow: 0px 2px 0px rgba(0,0,0,0.1);
+//     transition: all .3s ease;
+
+//     &:hover { 
+//         box-shadow: 0px 2px 0px rgba(0,0,0,0); 
+//         transform: translateY(2px);
+//     }
+// }
+
+// #ForgotPassword { 
+//     font-size: 13px;
+// }
+
+// .btn-toolbar {
+//     text-align: center;
+// }
+
+// #LostPasswordForm_lostPasswordForm_action_forgotPassword { margin-top: 24px; }
+
+// #MemberLoginForm_LoginForm_Remember_Holder,
+// #MemberLoginForm_LoginForm_Remember_Holder .checkbox {
+//     width: auto !important;
+//     vertical-align: middle;
+//     margin: 10px 5px;
+// }
+
+
+.page-errorCon,
+.page-loginCon {
+    width: 90%;
+    height: 100vh;
+    margin: auto;
+}
+
+
+// .admin-nav {
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     z-index: 999;
+//     width: 100%;
+//     padding: 40px 0 20px;
+//     background: #fff;
+//     text-align: center;
+
+//     .hdr-frame__logo {
+//         position: relative;
+//         width: 100%;
+//         height: 60px;
+
+//         .img-fit {
+//             left: 50%;
+//             transform: translateX(-50%);
+//         }
+//     }
+// }
+
+// .login-frm__col {
+//     position: relative;
+//     width: 380px;
+//     background: #fff;
+//     margin: auto;
+//     box-shadow: -2px 3px 0px rgba(0,0,0,0.05);
+
+//     .login-frm__text {
+//         position: absolute;
+//         top: 24px;
+//         right: 0;
+//         background: $color--primary;
+//         padding: 8px 24px;
+//         box-sizing: border-box;
+//         border-radius: 50px 0 0 50px;
+
+//         * {
+//             font-size: 14px;
+//             text-transform: uppercase;
+//             font-weight: bold;
+//             color: #fff;
+//         }
+//     }
+// }
+
+// .login-frm__img {
+//     display: block;
+//     max-width: 200px;
+//     max-height: 100px;
+//     margin-right: auto;
+//     margin-bottom: 30px;
+//     margin-left: auto;
+// }
+
+.text-justify { text-align: justify; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }

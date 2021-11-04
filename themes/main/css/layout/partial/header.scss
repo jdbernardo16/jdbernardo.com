@@ -1,0 +1,77 @@
+/*
+* HEADER
+* hdr : header
+*/
+
+#header {
+	position: fixed;
+	display: flex;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100px;
+	z-index: 4;
+	background: $color--navy;
+	@extend %trans-ease;
+
+	&.scroll {
+		height: 70px;
+		box-shadow: 0 10px 30px -10px rgba(2, 12, 27, 0.7);
+
+	}
+
+	.header-wrapper {
+		padding: 0 50px;
+		display: flex;
+	    -webkit-box-pack: justify;
+	    justify-content: space-between;
+	    -webkit-box-align: center;
+	    align-items: center;
+	    position: relative;
+	    width: 100%;
+	}
+
+	.logo-cntnr {
+		width: 20%;
+		.logo {
+			width: 42px;
+			height: 42px;
+			transform: translateY(4px);
+		}
+	}
+
+	.hdr-menu {
+		width: 80%;
+		text-align: right;
+
+		&__link {
+			display: inline-block;
+			padding: 10px;
+			margin: 0 5px;
+
+			counter-increment: item;
+			a {
+				font-family: $font--secondary;
+				font-size: 0.813rem;
+				@extend %trans-ease;
+
+				&::before {
+					content: "0" counter(item) ".";
+				    margin-right: 5px;
+				    color: $color--primary;
+				    text-align: right;
+				}
+
+				&:hover {
+					color: $color--primary;
+				}
+			}
+		}
+
+		.resume-btn {
+			display: inline-block;
+			margin-left: 15px;
+		}
+	}
+
+}

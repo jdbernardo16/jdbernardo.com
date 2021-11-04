@@ -1,0 +1,110 @@
+// @media screen and (min-width: 1366px) {
+
+// 	$font-size-default: 1.171vw;          //16px | Default
+
+// 	$font-size-xxx-large: 3.514vw;        //48px | H1, Main Title
+// 	$font-size-xx-large: 2.635vw;         //36px | H2, Section Title
+// 	$font-size-x-large: 1.757vw;          //24px | H3, Frame Sub Title
+// 	$font-size-large: 1.464vw;            //20px | H4, Card Title
+// 	$font-size-medium: 1.171vw;           //16px | H5, Button
+// 	$font-size-small: 1.025vw;            //14px | H6, Card Desc, Default
+// 	$font-size-x-small: 0.878vw;      	  //12px | Small, Footer
+// 	$font-size-xx-small: 0.732vw;      	  //10px | 
+
+// 	h1 {
+// 		font-size: $font-size-xxx-large;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	h2 {
+// 		font-size: $font-size-xx-large;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	h3 {
+// 		font-size: $font-size-x-large;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	h4 {
+// 		font-size: $font-size-large;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	h5 {
+// 		font-size: $font-size-medium;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	h6 {
+// 		font-size: $font-size-small;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	small {
+// 		font-size: $font-size-x-small;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	p, span, b, strong, a {
+// 		font-size: $font-size-default;
+
+// 		span, b, strong, a {
+// 			font-size: inherit;
+// 		}
+// 	}
+
+// 	// Font Size
+// 	.font-size--default, .font-size--default * { font-size: $font-size-default; }
+
+// 	.font-size--xxx-large, .font-size--xxx-large * { font-size: $font-size-xxx-large; }
+// 	.font-size--xx-large, .font-size--xx-large * { font-size: $font-size-xx-large; }
+// 	.font-size--x-large, .font-size--x-large * { font-size: $font-size-x-large; }
+// 	.font-size--large, .font-size--large * { font-size: $font-size-large; }
+// 	.font-size--medium, .font-size--medium * { font-size: $font-size-medium; }
+// 	.font-size--small, .font-size--small * { font-size: $font-size-small; }
+// 	.font-size--x-small, .font-size--x-small * { font-size: $font-size-x-small; }
+// 	.font-size--xx-small, .font-size--xx-small * { font-size: $font-size-xx-small; }
+// }
+
+@media screen and (max-width: 1024px) {
+
+	
+}
+
+@media screen and (max-width: 768px) {
+
+	
+}
+
+
+@media screen and (max-width: 468px) {
+
+	
+}
+
+@media screen and (max-width: 378px) {
+
+	
+}

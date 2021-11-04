@@ -1,0 +1,19 @@
+/*
+* Footer
+* ftr : footer
+*/
+
+#footer {
+	.wrapper {
+		max-width: 1000px;
+		margin: auto;
+		text-align: center;
+		padding: 50px 0;
+
+		p {
+			font-family: $font--secondary;
+			font-size: 12px;
+			color: $color--lightgray;
+		}
+	}
+}

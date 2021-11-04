@@ -1,0 +1,56 @@
+{
+    "name": "silverstripe/installer",
+    "type": "silverstripe-recipe",
+    "description": "The SilverStripe Framework Installer",
+    "require": {
+        "php": "^7.1 || ^8",
+        "silverstripe/recipe-plugin": "^1.2",
+        "silverstripe/recipe-cms": "~4.9.0@stable",
+        "silverstripe-themes/simple": "~3.2.0",
+        "silverstripe/login-forms": "~4.5.0@stable",
+        "undefinedoffset/sortablegridfield": "^2.0",
+        "bummzack/sortablefile": "^2.0",
+        "phpmailer/phpmailer": "^6.0",
+        "gargron/fileupload": "~1.4.0",
+        "tractorcow/silverstripe-colorpicker": "^4@dev"
+    },
+    "require-dev": {
+        "sminnee/phpunit": "^5.7",
+        "sminnee/phpunit-mock-objects": "^3.4.5"
+    },
+    "extra": {
+        "resources-dir": "_resources",
+        "expose": [
+            "themes/main/assets",
+            "themes/main/css",
+            "themes/main/fonts",
+            "themes/main/images",
+            "themes/main/js",
+            "themes/main/templates",
+            "vendor/undefinedoffset/sortablegridfield/css",
+            "vendor/undefinedoffset/sortablegridfield/javascript",
+            "vendor/bummzack/sortablefile/client/dist",
+            "vendor/tractorcow/silverstripe-colorpicker/client"
+        ],
+        "project-files-installed": [
+            "app/.htaccess",
+            "app/_config.php",
+            "app/_config/mimevalidator.yml",
+            "app/_config/mysite.yml",
+            "app/src/Page.php",
+            "app/src/PageController.php"
+        ],
+        "public-files-installed": [
+            ".htaccess",
+            "index.php",
+            "install-frameworkmissing.html",
+            "install.php",
+            "web.config"
+        ]
+    },
+    "config": {
+        "process-timeout": 600
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev"
+}

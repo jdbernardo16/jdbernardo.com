@@ -1,0 +1,204 @@
+/** 
+ * Form
+ * frm-form : frame form
+ */
+.frm-form__holder {
+	.frm-form__row {
+		position: relative;
+		margin-bottom: 25px;
+
+		label {
+			display: block;
+			font-family: $font--main;
+			font-size: $font-size-default;
+			padding-left: 4px;
+			margin-bottom: 8px;
+			color: $color--gray--700;
+		}
+
+		input:focus,
+		textarea:focus,
+		select:focus,
+		button:focus {
+			outline: none;
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			appearance: none;
+		}
+
+		.frm-form__input {
+			width: 100%;
+			height: 50px;
+			font-size: $font-size-default;
+			font-family: $font--main;
+			color: #000;
+			padding: 10px 25px;
+			box-sizing: border-box;
+			transition: all .5s ease;
+			background: $color--white;
+			border: 1px solid $color--gray--700;
+			border-radius: 25px;
+
+			&::placeholder { font-size: $font-size-default; color: $color--gray--500; }
+			&:focus,
+			&:active,
+			&:visited {
+				border: 1px solid $color--primary;
+			}
+
+			&.textarea { min-height: 160px; }
+		}
+	}
+}
+
+.frm-form__check-holder {
+	position: relative;
+	padding-left: 18px;
+
+	.frm-check {
+		width: 100%;
+		font-family: $font--main;
+		font-size: 12px;
+		color: #9b9b9b;
+		cursor: pointer;
+
+		input {
+			position: absolute;
+			opacity: 0;
+			cursor: pointer;
+			height: 0;
+			width: 0;
+
+			&:checked ~ .frm-form__checkbox:after {
+				display: block;
+			}
+		}
+
+		.error {
+			display: none !important;
+		}
+
+		.frm-form__checkbox {
+			position: absolute;
+			top: 6px;
+			left: 0;
+			height: 10px;
+			width: 10px;
+			background-color: $color--white;
+			border: 1px solid $color--gray--700;
+			cursor: pointer;
+
+			&::after {
+				content: "\2713";
+				position: absolute;
+				display: none;
+				left: -1px;
+				top: -9px;
+				color: $color--primary;
+				font-size: 20px;
+			}
+		}
+	}
+}
+
+.frm-select {
+	position: relative;
+	width: 100%;
+	height: auto;
+	cursor: pointer;
+
+	select {
+		width: 100%;
+		height: 50px;
+		font-size: $font-size-default;
+		font-family: $font--main;
+		color: $color--gray--700;
+		padding: 10px 25px;
+		padding-right: 42px;
+		box-sizing: border-box;
+		transition: all .5s ease;
+		background: $color--white;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		appearance: none;
+		-ms-word-break: normal;
+		word-break: normal;
+		white-space: nowrap; 
+		overflow: hidden;
+		text-overflow: ellipsis;
+		border: 1px solid $color--gray--700;
+		border-radius: 25px;
+
+		&:focus,
+		&:active,
+		&:visited {
+			border: 1px solid $color--primary;
+		}
+	}
+
+	option:disabled { color: #c4c4c4 !important; }
+
+	&:after {
+		position: absolute;
+		right: 20px;
+		top: 55%;
+		width: 10px;
+		height: 10px;
+		content: "";
+		color: #000;
+		transform: translateY(-50%) rotate(45deg);
+		pointer-events: none;
+		border-right: 2px solid $color--black;
+		border-bottom: 2px solid $color--black;
+	}
+
+	label.error {
+		top: -16px;
+	}
+}
+
+label.error {
+	position: absolute;
+	top: 0px;
+	right: 4px;
+	text-transform: inherit !important;
+	color: red !important;
+	margin-bottom: 0 !important;
+	font-size: 0.85em;
+	margin-top: 2px;
+}
+
+.frm-file {
+
+	.frm-form__input {
+		position: relative;
+		// padding: 0 20px;
+		// line-height: 40px;
+
+		margin-top: 8px;
+		padding: 10px;
+		width: 100%;
+		background: $color--white;
+		border: 1px solid #ebebeb;
+		box-sizing: border-box;
+		border-radius: 8px;
+	}
+
+	img {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+	}
+
+	.custom-file-upload {
+		// height: 40px;
+		color: #808080;
+		width: 94%;
+		max-width: 94%;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		display: block;
+		// line-height: 40px;
+	}
+}

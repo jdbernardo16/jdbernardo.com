@@ -1,0 +1,17 @@
+/** 
+ * MIXINS
+ * --
+ * Set the default values according to your preference.
+**/
+
+@mixin background ($repeat, $position, $size) {
+    background-repeat: $repeat;
+    background-position: $position;
+    background-size: $size;
+}
+
+@mixin transition ($property, $duration, $timing) {
+    transition-property: $property;
+    transition-duration: $duration;
+    transition-timing-function: $timing;
+}

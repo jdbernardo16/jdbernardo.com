@@ -1,0 +1,162 @@
+.slick-arrow {
+
+	button {
+		height: 23px;
+		padding: 0;
+		border: unset;
+		background-color: transparent;
+	}
+
+	&::before {
+		display: none;
+	}
+
+	&.slick-prev, &.slick-next {
+		z-index: 5;
+
+		&::before, &::after {
+			content: "";
+			display: block;
+			border-color: $color--primary;
+			opacity: 1;
+			@extend %trans-ease;
+		}
+
+		&::before {
+			width: 15px;
+			height: 15px;
+			border-left: 4px solid;
+			border-top: 4px solid;
+			transform: rotate(-45deg);
+			border-radius: 4px;
+			color: $color--primary;
+		}
+
+		&:hover {
+
+			&::before, &::after {
+				border-color: $color--primary;
+			}
+		}
+	}
+
+	&.slick-next {
+		transform: scaleX(-1);
+	}
+}
+
+.slick-dots {
+	text-align: left;
+	padding-left: 5%;
+
+	li {
+		width: 10px;
+		height: 10px;
+		margin: 0 3px;
+
+		&.slick-active button {
+			background-color: $color--primary;
+			opacity: 1;
+
+			&:hover {
+				background-color: $color--primary;
+				opacity: 1;
+			}
+		}
+
+		button {
+			width: 100%;
+			height: 100%;
+			background-color: $color--primary;
+			// box-shadow: 0 4px 4px rgba(0,0,0,0.25);
+			border-radius: 50%;
+			opacity: 0.32;
+			@extend %trans-ease;
+
+			&::before {
+				display: none;
+			}
+
+			&:hover {
+				background-color: lighten($color--primary, 10%);
+			}
+		}
+	}
+}
+
+// SWIPER SLIDER
+// arrows
+.btn-prev,
+.btn-next {
+	cursor: pointer;
+
+	img {
+		transition: all ease .5s;		
+	}
+
+	&:hover {
+		img {
+			transform: translateY(-2px);
+		}
+	}
+
+	&.btn-up,
+	&.btn-down {
+		img {
+			transform: rotate(90deg);
+		}
+	}
+}
+
+// bullets
+.swiper-pagination-bullet {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    border-radius: 100%;
+    background: $color--primary;
+    opacity: .5;
+    margin-right: 8px;
+
+    &:only-child {
+        display: none !important;
+    }
+}
+
+.swiper-pagination-bullet-active {
+    opacity: 1;
+    background: $color--primary;
+}
+
+.type-2 {
+	// position: relative;
+	text-align: left;
+	// bottom: 40px;
+
+	.swiper-pagination-bullet {
+	    width: 15px;
+	    height: 15px;
+	    opacity: 1;
+	    margin-right: 26px !important;
+	    margin-left: 0 !important;
+	    background: #464646;
+	    box-shadow: 0 4px 4px rgba(0,0,0,0.25);
+	}
+
+	.swiper-pagination-bullet-active {
+	    opacity: 1;
+	    background: $color--primary;
+	}
+
+	&.white {
+		.swiper-pagination-bullet {
+		    margin-right: 23px !important;
+		    background: #fff;
+		}
+
+		.swiper-pagination-bullet-active {
+		    opacity: 1;
+		    background: $color--primary;
+		}
+	}
+}

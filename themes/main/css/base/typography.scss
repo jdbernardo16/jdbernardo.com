@@ -1,0 +1,178 @@
+/** 
+ * TYPOGRAPHY
+ * --
+ * Set the default values according to your preference.
+**/
+
+html {
+    font-size: 16px;
+    font-family: $font--main;
+    line-height: 1.5;
+
+    h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, span,
+    small, strong, ol, ul, li, label, th, td {
+        font-family: $font--main;
+        line-height: 1.5;
+    }
+
+    b, strong {
+        font-weight: bold;
+    }
+}
+
+body {
+    font-family: inherit;
+}
+
+h1 {
+    font-size: $font-size-xxx-large;
+    font-family: $font--main;
+    font-weight: bold;
+    line-height: 5rem !important;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+h2 {
+    font-size: $font-size-xx-large;
+    font-family: $font--main;
+    font-weight: bold;
+    line-height: 3.583rem !important;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+h3 {
+    font-size: $font-size-x-large;
+    font-family: $font--main;
+    font-weight: 600;
+
+    &.v2 {
+        font-size: 2rem !important;
+    }
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+h4 {
+    font-size: $font-size-large;
+    font-family: $font--main;
+    font-weight: normal;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+h5 {
+    font-size: $font-size-medium;
+    font-family: $font--main;
+    font-weight: normal;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+h6 {
+    font-size: $font-size-small;
+    font-family: $font--main;
+    font-weight: bold;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+small {
+    font-size: $font-size-x-small;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+p, span, b, strong, a {
+    font-size: $font-size-large;
+
+    span, b, strong, a {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+    }
+}
+
+a {
+    font-size: inherit;
+    font-family: inherit;
+    font-weight: inherit;
+    text-decoration: none;
+}
+
+
+// Font Size
+.font-size--default { font-size: $font-size-default }
+
+.font-size--xxx-large { font-size: $font-size-xxx-large }
+.font-size--xx-large { font-size: $font-size-xx-large }
+.font-size--x-large { font-size: $font-size-x-large }
+.font-size--large { font-size: $font-size-large }
+.font-size--medium { font-size: $font-size-medium }
+.font-size--small { font-size: $font-size-small }
+.font-size--x-small { font-size: $font-size-x-small }
+.font-size--xx-small { font-size: $font-size-xx-small }
+
+
+// Font-weights
+.font-weight--regular { font-weight: normal; }
+.font-weight--medium { font-weight: 500; }
+.font-weight--semibold { font-weight: 600; }
+.font-weight--bold { font-weight: 700; }
+.font-weight--extrabold { font-weight: 800; }
+
+// Font-Fammily
+.font-1 { font-family: $font--main; }
+.font-2 { font-family: $font--secondary; }
+
+// Font style
+
+// Text decoratiom
+.u-line { text-decoration: underline; }
+.font-italic { font-style: italic; }
+.text-uppercase { text-transform: uppercase; }
+.line-height-1 { line-height: 1.1; }
+
+@media screen and (max-width: 1024px) {
+    h1 {
+        font-size: 2rem !important;
+        line-height: 3rem !important;
+    }
+
+    h2 {
+        font-size: 2rem !important;
+        line-height: 3rem !important;
+    }
+    h3 {
+        font-size: 1rem !important;
+    }
+}

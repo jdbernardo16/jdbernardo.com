@@ -1,0 +1,157 @@
+html{
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    height: 100% !important;
+    background-color: #0a192f;
+}
+
+body {
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: scale;
+    text-rendering: optimizeLegibility;
+    color: $color--white;
+    line-height: 1.5;
+    height: 100% !important;
+
+    &.active {
+        overflow-y: hidden;
+    }
+}
+
+.main {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background-color: #0a192f;
+
+
+}
+
+// Scroll custom
+.scroll-custom::-webkit-scrollbar {
+    width: 7px;
+    height: 0px;
+}
+
+.scroll-custom::-webkit-scrollbar-track {
+    background: #c4c4c4;
+    border-radius: 50px;
+}
+
+.scroll-custom::-webkit-scrollbar-thumb {
+    background: $color--primary;
+    border-radius: 50px;
+}
+
+.scroll-custom::-webkit-scrollbar-thumb:hover {
+    // background: darken($color--primary, 10);
+    background: #444;
+}
+
+// ::-webkit-scrollbar {
+//     width: 7px;
+//     height: 0px;
+// }
+
+// ::-webkit-scrollbar-track {
+//     background: #f1f1f1;
+//     border-radius: 10px;
+// }
+
+// ::-webkit-scrollbar-thumb {
+//     // background: $color--primary;
+//     background: $color--gray--500;
+//     border-radius: 10px;
+// }
+
+// ::-webkit-scrollbar-thumb:hover {
+//     background: darken($color--gray--500, 10);
+// }
+
+.frm-desc {
+
+    p {
+        font-family: $font--main;
+        line-height: 150%
+    }
+
+    a {
+        color: $color--primary;
+        @extend %trans-ease;
+
+            &:hover {
+                color: darken($color--primary, 20%);
+            }
+    }
+
+    ul {
+        padding-left: 20px;
+
+        li {
+            position: relative;
+            padding-left: 30px;
+            letter-spacing: normal;
+        }
+
+        li::before {
+            position: absolute;
+            top: 0;
+            left: 0;
+            content: "•";
+            color: $color--primary;
+            font-size: 2rem;
+            line-height: 1.6rem;
+        }
+    }
+
+    ol {
+        padding-left: 20px;
+
+        li {
+            position: relative;
+            padding-left: 30px;
+            letter-spacing: normal;
+            counter-increment: step;
+        }
+
+        li::before {
+            position: absolute;
+            top: 0;
+            left: 0;
+            content: counter(step)".";
+            color: #000;
+            font-size: 16px;
+        }
+    }
+
+    .upcase,
+    &.upcase * { text-transform: uppercase; }
+
+    img,
+    iframe {
+        max-width: 100% !important;
+        max-height: 100% !important;
+    }
+
+    div[thumbnail] {
+        position: relative;
+        width: 100% !important;
+        height: 400px;
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    }   
+
+    table {
+        max-width: 100% !important;
+    }
+}

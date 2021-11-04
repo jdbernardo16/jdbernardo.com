@@ -1,0 +1,36 @@
+/*
+* Generic Page
+* gen : generic
+*/
+.gen-frame {
+	padding: 60px 0 60px;
+
+	.frm-cntnr {
+		max-width: 900px;
+	}
+
+	.frm-desc {
+		margin-top: 60px;
+		margin-bottom: 60px;
+	}
+
+	.btn-hldr {
+		display: inline-block;
+	}
+}
+
+@media screen and (max-width: 1024px) {
+
+	.gen-frame {
+		padding: 55px 0 50px;
+
+		.width--80 {
+			width: 90%;
+		}
+
+		.frm-desc {
+			margin-top: 50px;
+			margin-bottom: 50px;
+		}
+	}
+}

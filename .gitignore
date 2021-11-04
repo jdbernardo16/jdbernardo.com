@@ -1,0 +1,34 @@
+# /themes/simple
+# /vendor/
+ /.env
+# /silverstripe-cache/
+# /resources/
+# /public/resources/
+# /public/_resources/
+# /themes/main/images/
+
+# # custom ignore
+# *.bak
+# *.sql
+# *.tar.xz
+# *.DS_Store
+
+# .editorconfig
+# .env.example
+# .htaccess
+# README.md
+# .cow/
+# betterbuttons/
+# composer.lock
+# node_modules/
+# package-lock.json
+# phpcs.xml.dist
+# .cow.json
+# .gitattributes
+# .travis.yml
+# CONTRIBUTING.md
+# LICENSE
+# behat.yml
+# build.xml
+# phpunit.xml.dist
+# web.config
