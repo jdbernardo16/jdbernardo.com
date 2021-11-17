@@ -11,7 +11,9 @@
 # *.bak
 # *.sql
 # *.tar.xz
-# *.DS_Store
+*.DS_Store
+*.zip
+*.sql
 
 # .editorconfig
 # .env.example
