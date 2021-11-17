@@ -35,5 +35,12 @@ namespace {
         public function getHeaderFooter() {
             return HeaderFooter::get();
         }
+        public function getArchivePage() {
+            return ArchivePage::get();
+        }
+
+        public function getProjects() {
+            return Project::get();
+        }
     }
 }

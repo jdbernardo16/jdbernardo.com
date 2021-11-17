@@ -53,7 +53,8 @@ namespace {
 
 		private static $has_one = [
 
-			'HeaderLogo' => Image::class,
+			'Logo' => Image::class,
+            'Resume' => File::class,
             'Favicon' => Image::class,
             'MsLogoSq' => Image::class,
             'MsLogoWd' => Image::class,
@@ -61,11 +62,11 @@ namespace {
 		];
 
 		private static $has_many = [
-            'SocialMedias' => SocialMedia::class,
         ];
 
         private static $owns = [
-            'HeaderLogo',
+            'Logo',
+            'Resume',
             'Favicon',
             'MsLogoSq',
             'MsLogoWd',
@@ -107,24 +108,10 @@ namespace {
             */
             $fields->addFieldToTab('Root.Header', new TabSet('HeaderSets',
                 new Tab('Content',
-                    $upload1 = UploadField::create('HeaderLogo','Logo')
+                    $upload1 = UploadField::create('Logo','Logo')
                 )
             ));
 
-            /*
-            * Social Media
-            */
-            $fields->addFieldToTab('Root.Social Media', new TabSet('SocialMediaSets',
-                new Tab('Social Media',
-                    GridField::create(
-                        'SocialMedias',
-                        'Social Medias',
-                        $this->SocialMedias(),
-                        GridFieldConfig_RecordEditor::create(10)
-                        ->addComponent(new GridFieldSortableRows('SortOrder'))
-                    )
-                )
-            ));
 
 			#Description
             $desc->setDescription('Separate each descriptions with comma (,)');
@@ -144,6 +131,13 @@ namespace {
 			* Remove by tab
 			*/
 			$fields->removeFieldFromTab('Root.Main', 'Content');
+
+            $fields->addFieldsToTab('Root.Resume.Main', array(
+                $cv = UploadField::create('Resume','Resume')
+            ));
+
+            $cv->setDescription('Max file size: 2MB');
+            $cv->setFolderName('headerfooter/cv');
 
 			return $fields;
 		}

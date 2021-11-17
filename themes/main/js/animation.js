@@ -17,11 +17,8 @@ var animate = {
             var controller = new ScrollMagic.Controller();
 
             $('.hm-frame1').each(function() {
-               var tl = gsap.timeline({defaults:{duration: 1}});
-                tl .from(".banner-bg", {y:10, stagger: 1, opacity: 0})
-                .from(".hm-frame1__header", {y:20, stagger: 1, opacity: 0}, "-=1")
-                .from(".hm-frame1__desc", {y:20, stagger: 1, opacity: 0}, "-=.5")
-                .from(".hm-frame1__button", {y:20, stagger: 1, opacity: 0}, "-=.5")
+               var tl = gsap.timeline({delay: 3, defaults:{duration: .5}});
+                tl.from(".f1animate", {y:10, stagger: .2, opacity: 0})
                 // .from(".hm-frame1__header", {delay: 1, width: 0, stagger: 1, opacity: 0}, "-=1")
 
                 var fadeScene = new ScrollMagic.Scene({
@@ -37,7 +34,7 @@ var animate = {
              /*General Animation*/
 
             $('.animate-up').each(function() {
-                var tl = gsap.timeline({defaults:{duration: .6}});
+                var tl = gsap.timeline({defaults:{duration: .5}});
                 tl.from(this, {y:10, opacity: 0})
 
                 var fadeScene = new ScrollMagic.Scene({

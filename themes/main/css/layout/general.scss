@@ -32,45 +32,38 @@ body {
 }
 
 // Scroll custom
-.scroll-custom::-webkit-scrollbar {
-    width: 7px;
-    height: 0px;
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
 }
 
-.scroll-custom::-webkit-scrollbar-track {
-    background: #c4c4c4;
-    border-radius: 50px;
+/* Track */
+::-webkit-scrollbar-track {
+  border-radius: 10px;
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: $color--lightgray; 
+  border-radius: 10px;
 }
 
-.scroll-custom::-webkit-scrollbar-thumb {
-    background: $color--primary;
-    border-radius: 50px;
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: $color--primary; 
 }
 
-.scroll-custom::-webkit-scrollbar-thumb:hover {
-    // background: darken($color--primary, 10);
-    background: #444;
+.linksvg {
+    cursor: pointer;
+    .path-1, .path-2, .path-3 {
+        @extend %trans-ease;
+    }
+    &:hover {
+        .path-1, .path-2, .path-3 {
+            stroke: $color--primary;
+        } 
+    }
 }
-
-// ::-webkit-scrollbar {
-//     width: 7px;
-//     height: 0px;
-// }
-
-// ::-webkit-scrollbar-track {
-//     background: #f1f1f1;
-//     border-radius: 10px;
-// }
-
-// ::-webkit-scrollbar-thumb {
-//     // background: $color--primary;
-//     background: $color--gray--500;
-//     border-radius: 10px;
-// }
-
-// ::-webkit-scrollbar-thumb:hover {
-//     background: darken($color--gray--500, 10);
-// }
 
 .frm-desc {
 

@@ -97,7 +97,7 @@
         <% include Header %>
         <% end_if %>
 
-        <div class="main">
+        <div class="main scroll-custom">
 
             $Layout
 
@@ -135,11 +135,11 @@
         <% end_if %>
 
         <!-- !!! -->
-        <script type="text/javascript">
-            var pageID = '$ClassName',
-            baseHref = '$BaseHref',
-            themeDir = '$ThemeDir';
-        </script>
+<script type="text/javascript">
+    var pageID = '$ClassName',
+    baseHref = '$BaseHref',
+    themeDir = '$ThemeDir';
+</script>
 
 
         <!--Start of Tawk.to Script-->
@@ -200,36 +200,6 @@
         <!-- HoverIntent -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.hoverintent/1.10.1/jquery.hoverIntent.min.js" integrity="sha512-gx3WTM6qxahpOC/hBNUvkdZARQ2ObXSp/m+jmsEN8ZNJPymj8/Jamf8+/3kJQY1RZA2DR+KQfT+b3JEB0r9YRg==" crossorigin="anonymous"></script>
         <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-        <% if ClassName == 'ContactUsPage' %>
-        <!-- GoogleMap -->
-        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdZmifNZogZcfRQ-wZy0B7yVVTd0cvPm4"></script>
-
-        <!-- Maps -->
-        <% loop ContactUsPage %>
-        <script type="text/javascript">
-            var mapLat = $Latitude,
-                mapLng = $Longitude;
-
-            var mapOptions = {
-                zoom: 15,
-                center: new google.maps.LatLng(mapLat, mapLng)
-            };
-
-            var mapElement = document.getElementById('map');
-            var map = new google.maps.Map(mapElement, mapOptions);
-            var marker = new google.maps.Marker({
-                position: new google.maps.LatLng(mapLat, mapLng),
-                map: map,
-                title: 'Easytrip',
-                icon: '$Pin.Url',
-                animation: google.maps.Animation.DROP,
-            });
-            map.panBy(-100, 0);
-        </script>
-        <% end_loop %>
-
-        <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-        <% end_if %>
 
         <!-- Light Gallery -->
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.4/js/lightgallery.min.js"></script>
