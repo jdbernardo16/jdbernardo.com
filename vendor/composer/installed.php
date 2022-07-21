@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
         'type' => 'silverstripe-recipe',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => NULL,
+        'reference' => 'b37a25365ff49c4e2c532d634dbab20bda706662',
         'name' => 'silverstripe/installer',
         'dev' => true,
     ),
@@ -185,12 +185,12 @@
             ),
         ),
         'nikic/php-parser' => array(
-            'pretty_version' => 'v4.13.0',
-            'version' => '4.13.0.0',
+            'pretty_version' => 'v4.13.1',
+            'version' => '4.13.1.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nikic/php-parser',
             'aliases' => array(),
-            'reference' => '50953a2691a922aa1769461637869a0a2faa3f53',
+            'reference' => '63a79e8daa781cac14e5195e63ed8ae231dd10fd',
             'dev_requirement' => false,
         ),
         'phpdocumentor/reflection-common' => array(
@@ -587,12 +587,12 @@
             'dev_requirement' => false,
         ),
         'silverstripe/installer' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
             'type' => 'silverstripe-recipe',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => NULL,
+            'reference' => 'b37a25365ff49c4e2c532d634dbab20bda706662',
             'dev_requirement' => false,
         ),
         'silverstripe/login-forms' => array(
