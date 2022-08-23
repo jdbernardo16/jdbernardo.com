@@ -14,6 +14,7 @@ use SilverStripe\Core\Injector\InjectorNotFoundException;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\View\AttributesHTML;
 use SilverStripe\View\HTML;
 
 /**
@@ -49,6 +50,8 @@ use SilverStripe\View\HTML;
  */
 trait ImageManipulation
 {
+    use AttributesHTML;
+
     /**
      * @var Image_Backend
      */
@@ -60,12 +63,6 @@ trait ImageManipulation
      * @var bool
      */
     protected $allowGeneration = true;
-
-    /**
-     * List of attributes to render on the frontend
-     * @var array
-     */
-    protected $attributes = [];
 
     /**
      * Set whether image resizes are allowed
@@ -306,10 +303,9 @@ trait ImageManipulation
 
         // Only update if resampled file is a smaller file size
         if ($resampled->getAbsoluteSize() < $this->getAbsoluteSize()) {
-            $url = $resampled->getURL();
+            $url = $resampled->getURL(false);
         }
     }
-
 
     /**
      * Generate a resized copy of this image with the given width & height.
@@ -708,7 +704,7 @@ trait ImageManipulation
     {
         $thumbnail = $this->Thumbnail($width, $height);
         if ($thumbnail) {
-            return $thumbnail->getURL();
+            return $thumbnail->getURL(false);
         }
         return $this->getIcon();
     }
@@ -723,7 +719,7 @@ trait ImageManipulation
     public function getIcon()
     {
         $filename = $this->getFilename();
-        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+        $ext = pathinfo($filename ?? '', PATHINFO_EXTENSION);
         return File::get_icon_for_extension($ext);
     }
 
@@ -1024,11 +1020,11 @@ trait ImageManipulation
      */
     public function variantParts($variantName)
     {
-        $methods = array_map('preg_quote', singleton(Image::class)->allMethodNames());
+        $methods = array_map('preg_quote', singleton(Image::class)->allMethodNames() ?? []);
 
         // Regex needs to be case insensitive since allMethodNames() is all lowercased
         $regex = '#^(?<format>(' . implode('|', $methods) . '))(?<encodedargs>(.*))#i';
-        preg_match($regex, $variantName, $matches);
+        preg_match($regex ?? '', $variantName ?? '', $matches);
 
         if (!$matches) {
             throw new InvalidArgumentException('Invalid variant name: ' . $variantName);
@@ -1104,6 +1100,7 @@ trait ImageManipulation
      */
     public function setAttribute($name, $value)
     {
+        /** @var DBFile $file */
         $file = $this->copyImageBackend();
         $file->initAttributes(array_merge(
             $this->attributes,
@@ -1124,20 +1121,22 @@ trait ImageManipulation
         $this->attributes = $attributes;
     }
 
-    /**
-     * Retrieve the value of an HTML attribute
-     * @param $name
-     * @return mixed|null
-     */
-    public function getAttribute($name)
+    protected function getDefaultAttributes(): array
     {
-        $attributes = $this->getAttributes();
+        $attributes = [];
+        if ($this->getIsImage()) {
+            $attributes = [
+                'width' => $this->getWidth(),
+                'height' => $this->getHeight(),
+                'alt' => $this->getTitle(),
+                'src' => $this->getURL(false)
+            ];
 
-        if (isset($attributes[$name])) {
-            return $attributes[$name];
+            if ($this->IsLazyLoaded()) {
+                $attributes['loading'] = 'lazy';
+            }
         }
-
-        return null;
+        return $attributes;
     }
 
     /**
@@ -1149,22 +1148,11 @@ trait ImageManipulation
      */
     public function getAttributes()
     {
-        $attributes = [];
-        if ($this->getIsImage()) {
-            $attributes = [
-                'width' => $this->getWidth(),
-                'height' => $this->getHeight(),
-                'alt' => $this->getTitle(),
-                'src' => $this->getURL()
-            ];
+        $defaultAttributes = $this->getDefaultAttributes();
 
-            if ($this->IsLazyLoaded()) {
-                $attributes['loading'] = 'lazy';
-            }
-        }
+        $attributes = array_merge($defaultAttributes, $this->attributes);
 
-        $attributes = array_merge($attributes, $this->attributes);
-
+        // We need to suppress the `loading="eager"` attribute after we merge the default attributes
         if (isset($attributes['loading']) && $attributes['loading'] === 'eager') {
             unset($attributes['loading']);
         }
@@ -1172,59 +1160,6 @@ trait ImageManipulation
         $this->extend('updateAttributes', $attributes);
 
         return $attributes;
-    }
-
-    /**
-     * Custom attributes to process. Falls back to {@link getAttributes()}.
-     *
-     * If at least one argument is passed as a string, all arguments act as excludes, by name.
-     *
-     * @param array $attributes
-     * @return string
-     */
-    public function getAttributesHTML($attributes = null)
-    {
-        $exclude = null;
-
-        if (is_string($attributes)) {
-            $exclude = func_get_args();
-        }
-
-        if (!$attributes || is_string($attributes)) {
-            $attributes = $this->getAttributes();
-        }
-
-        $attributes = (array) $attributes;
-
-        $attributes = array_filter($attributes, function ($v) {
-            return ($v || $v === 0 || $v === '0');
-        });
-
-        if ($exclude) {
-            $attributes = array_diff_key(
-                $attributes,
-                array_flip($exclude)
-            );
-        }
-
-        // Create markup
-        $parts = [];
-
-        foreach ($attributes as $name => $value) {
-            if ($value === true) {
-                $value = $name;
-            } else {
-                if (is_scalar($value)) {
-                    $value = (string) $value;
-                } else {
-                    $value = json_encode($value);
-                }
-            }
-
-            $parts[] = sprintf('%s="%s"', Convert::raw2att($name), Convert::raw2att($value));
-        }
-
-        return implode(' ', $parts);
     }
 
     /**
@@ -1252,7 +1187,7 @@ trait ImageManipulation
         }
 
         if (is_string($lazyLoad)) {
-            $lazyLoad = strtolower($lazyLoad);
+            $lazyLoad = strtolower($lazyLoad ?? '');
         }
 
         $equivalence = [

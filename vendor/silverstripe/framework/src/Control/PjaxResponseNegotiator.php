@@ -33,7 +33,7 @@ class PjaxResponseNegotiator
     protected $response = null;
 
     /**
-     * Overriden fragments (if any). Otherwise uses fragments from the request.
+     * Overridden fragments (if any). Otherwise uses fragments from the request.
      */
     protected $fragmentOverride = null;
 
@@ -82,7 +82,7 @@ class PjaxResponseNegotiator
         if (isset($this->fragmentOverride)) {
             $fragments = $this->fragmentOverride;
         } elseif ($fragmentStr = $request->getHeader('X-Pjax')) {
-            $fragments = explode(',', $fragmentStr);
+            $fragments = explode(',', $fragmentStr ?? '');
         } else {
             if ($request->isAjax()) {
                 throw new HTTPResponse_Exception("Ajax requests to this URL require an X-Pjax header.", 400);

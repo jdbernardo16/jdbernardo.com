@@ -3,6 +3,7 @@
 namespace SilverStripe\ORM\Connect;
 
 use mysqli;
+use mysqli_sql_exception;
 use mysqli_stmt;
 use SilverStripe\Core\Config\Config;
 
@@ -63,7 +64,12 @@ class MySQLiConnector extends DBConnector
         // Record last statement for error reporting
         $statement = $this->dbConn->stmt_init();
         $this->setLastStatement($statement);
-        $success = $statement->prepare($sql);
+        try {
+            $success = $statement->prepare($sql);
+        } catch (mysqli_sql_exception $e) {
+            $success = false;
+            $this->databaseError($e->getMessage(), E_USER_ERROR, $sql);
+        }
         return $statement;
     }
 
@@ -91,15 +97,15 @@ class MySQLiConnector extends DBConnector
         }
 
         // Set SSL parameters if they exist. All parameters are required.
-        if (array_key_exists('ssl_key', $parameters) &&
-            array_key_exists('ssl_cert', $parameters) &&
-            array_key_exists('ssl_ca', $parameters)) {
+        if (array_key_exists('ssl_key', $parameters ?? []) &&
+            array_key_exists('ssl_cert', $parameters ?? []) &&
+            array_key_exists('ssl_ca', $parameters ?? [])) {
             $this->dbConn->ssl_set(
                 $parameters['ssl_key'],
                 $parameters['ssl_cert'],
                 $parameters['ssl_ca'],
-                dirname($parameters['ssl_ca']),
-                array_key_exists('ssl_cipher', $parameters)
+                dirname($parameters['ssl_ca'] ?? ''),
+                array_key_exists('ssl_cipher', $parameters ?? [])
                     ? $parameters['ssl_cipher']
                     : self::config()->get('ssl_cipher_default')
             );
@@ -145,7 +151,7 @@ class MySQLiConnector extends DBConnector
 
     public function escapeString($value)
     {
-        return $this->dbConn->real_escape_string($value);
+        return $this->dbConn->real_escape_string($value ?? '');
     }
 
     public function quoteString($value)
@@ -175,7 +181,7 @@ class MySQLiConnector extends DBConnector
         $this->beforeQuery($sql);
 
         // Benchmark query
-        $handle = $this->dbConn->query($sql, MYSQLI_STORE_RESULT);
+        $handle = $this->dbConn->query($sql ?? '', MYSQLI_STORE_RESULT);
 
         if (!$handle || $this->dbConn->error) {
             $this->databaseError($this->getLastError(), $errorLevel, $sql);
@@ -198,7 +204,7 @@ class MySQLiConnector extends DBConnector
         $types = '';
         $values = [];
         $blobs = [];
-        $parametersCount = count($parameters);
+        $parametersCount = count($parameters ?? []);
         for ($index = 0; $index < $parametersCount; $index++) {
             $value = $parameters[$index];
             $phpType = gettype($value);
@@ -258,7 +264,7 @@ class MySQLiConnector extends DBConnector
         // Because mysqli_stmt::bind_param arguments must be passed by reference
         // we need to do a bit of hackery
         $boundNames = [];
-        $parametersCount = count($parameters);
+        $parametersCount = count($parameters ?? []);
         for ($i = 0; $i < $parametersCount; $i++) {
             $boundName = "param$i";
             $$boundName = $parameters[$i];
@@ -313,7 +319,7 @@ class MySQLiConnector extends DBConnector
 
     public function selectDatabase($name)
     {
-        if ($this->dbConn->select_db($name)) {
+        if ($this->dbConn->select_db($name ?? '')) {
             $this->databaseName = $name;
             return true;
         }

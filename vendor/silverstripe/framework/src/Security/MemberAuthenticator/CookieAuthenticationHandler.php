@@ -12,7 +12,7 @@ use SilverStripe\Security\RememberLoginHash;
 use SilverStripe\Security\Security;
 
 /**
- * Authenticate a member pased on a session cookie
+ * Authenticate a member passed on a session cookie
  */
 class CookieAuthenticationHandler implements AuthenticationHandler
 {
@@ -134,11 +134,11 @@ class CookieAuthenticationHandler implements AuthenticationHandler
         $uidAndToken = Cookie::get($this->getTokenCookieName());
         $deviceID = Cookie::get($this->getDeviceCookieName());
 
-        if ($deviceID === null || strpos($uidAndToken, ':') === false) {
+        if ($deviceID === null || strpos($uidAndToken ?? '', ':') === false) {
             return null;
         }
 
-        list($uid, $token) = explode(':', $uidAndToken, 2);
+        list($uid, $token) = explode(':', $uidAndToken ?? '', 2);
 
         if (!$uid || !$token) {
             return null;

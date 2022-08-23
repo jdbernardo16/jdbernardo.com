@@ -98,7 +98,7 @@ class ThumbnailGenerator
      */
     public function generateThumbnail(AssetContainer $file, $width, $height)
     {
-        if (!$file->getIsImage() || !$file->exists()) {
+        if (!$file->exists() || !$file->getIsImage() || $file->config()->resample_images === false) {
             return null;
         }
 
@@ -111,7 +111,7 @@ class ThumbnailGenerator
         $method = $this->config()->get('method');
         return $file->$method($width, $height);
     }
-    
+
     /**
      * Generate "src" property for this thumbnail.
      * This can be either a url or base64 encoded data
@@ -145,7 +145,7 @@ class ThumbnailGenerator
                 return $thumbnail->getURL();
             case self::INLINE:
                 // Generate inline content
-                $base64 = base64_encode($thumbnail->getString());
+                $base64 = base64_encode($thumbnail->getString() ?? '');
                 return sprintf(
                     'data:%s;base64,%s',
                     $thumbnail->getMimeType(),

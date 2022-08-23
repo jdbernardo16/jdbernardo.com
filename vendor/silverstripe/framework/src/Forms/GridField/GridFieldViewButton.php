@@ -11,7 +11,7 @@ use SilverStripe\View\SSViewer;
  * disabled by default and intended for use in readonly {@link GridField}
  * instances.
  */
-class GridFieldViewButton implements GridField_ColumnProvider, GridField_ActionMenuLink
+class GridFieldViewButton extends AbstractGridFieldComponent implements GridField_ColumnProvider, GridField_ActionMenuLink
 {
     /**
      * @inheritdoc
@@ -49,7 +49,7 @@ class GridFieldViewButton implements GridField_ColumnProvider, GridField_ActionM
 
     public function augmentColumns($field, &$columns)
     {
-        if (!in_array('Actions', $columns)) {
+        if (!in_array('Actions', $columns ?? [])) {
             $columns[] = 'Actions';
         }
     }

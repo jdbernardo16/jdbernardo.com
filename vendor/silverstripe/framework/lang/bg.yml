@@ -1,4 +1,6 @@
 bg:
+  SilverStripe\Admin\LeftAndMain:
+    VersionUnknown: непозната
   SilverStripe\AssetAdmin\Forms\UploadField:
     Dimensions: Размери
     EDIT: Промени

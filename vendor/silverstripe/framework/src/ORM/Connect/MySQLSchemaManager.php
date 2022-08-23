@@ -114,7 +114,7 @@ class MySQLSchemaManager extends DBSchemaManager
     public function isView($tableName)
     {
         $info = $this->query("SHOW /*!50002 FULL*/ TABLES LIKE '$tableName'")->record();
-        return $info && strtoupper($info['Table_type']) == 'VIEW';
+        return $info && strtoupper($info['Table_type'] ?? '') == 'VIEW';
     }
 
     /**
@@ -169,7 +169,7 @@ class MySQLSchemaManager extends DBSchemaManager
     {
         $testResults = $this->query($sql);
         foreach ($testResults as $testRecord) {
-            if (strtolower($testRecord['Msg_text']) != 'ok') {
+            if (strtolower($testRecord['Msg_text'] ?? '') != 'ok') {
                 return false;
             }
         }
@@ -180,7 +180,7 @@ class MySQLSchemaManager extends DBSchemaManager
     {
         // MySQLi doesn't like parameterised queries for some queries
         // underscores need to be escaped in a SHOW TABLES LIKE query
-        $sqlTable = str_replace('_', '\\_', $this->database->quoteString($table));
+        $sqlTable = str_replace('_', '\\_', $this->database->quoteString($table) ?? '');
         return (bool) ($this->query("SHOW TABLES LIKE $sqlTable")->value());
     }
 
@@ -197,7 +197,7 @@ class MySQLSchemaManager extends DBSchemaManager
     public function databaseExists($name)
     {
         // MySQLi doesn't like parameterised queries for some queries
-        $sqlName = addcslashes($this->database->quoteString($name), '%_');
+        $sqlName = addcslashes($this->database->quoteString($name) ?? '', '%_');
         return !!($this->query("SHOW DATABASES LIKE $sqlName")->value());
     }
 
@@ -234,12 +234,29 @@ class MySQLSchemaManager extends DBSchemaManager
     public function renameField($tableName, $oldName, $newName)
     {
         $fieldList = $this->fieldList($tableName);
-        if (array_key_exists($oldName, $fieldList)) {
+        if (array_key_exists($oldName, $fieldList ?? [])) {
             $this->query("ALTER TABLE \"$tableName\" CHANGE \"$oldName\" \"$newName\" " . $fieldList[$oldName]);
         }
     }
 
     protected static $_cache_collation_info = [];
+
+    private function shouldUseIntegerWidth()
+    {
+        // MySQL 8.0.17 stopped reporting the width attribute for integers
+        // https://github.com/silverstripe/silverstripe-framework/issues/9453
+        // Note: MariaDB did not change its behaviour
+        $forceWidth = Config::inst()->get(self::class, 'schema_use_int_width');
+        if ($forceWidth !== null) {
+            return $forceWidth;
+        }
+        $v = $this->database->getVersion();
+        if (false !== strpos($v ?? '', 'MariaDB')) {
+            // MariaDB is included in the version string: https://mariadb.com/kb/en/version/
+            return true;
+        }
+        return version_compare($v ?? '', '8.0.17', '<');
+    }
 
     public function fieldList($table)
     {
@@ -370,11 +387,11 @@ class MySQLSchemaManager extends DBSchemaManager
     {
         // Get the enum of all page types from the SiteTree table
         $classnameinfo = $this->query("DESCRIBE \"$tableName\" \"$fieldName\"")->first();
-        preg_match_all("/'[^,]+'/", $classnameinfo["Type"], $matches);
+        preg_match_all("/'[^,]+'/", $classnameinfo["Type"] ?? '', $matches);
 
         $classes = [];
         foreach ($matches[0] as $value) {
-            $classes[] = stripslashes(trim($value, "'"));
+            $classes[] = stripslashes(trim($value ?? '', "'"));
         }
         return $classes;
     }
@@ -405,7 +422,8 @@ class MySQLSchemaManager extends DBSchemaManager
         //'default'=>$this->default);
         //DB::requireField($this->tableName, $this->name, "tinyint(1) unsigned not null default
         //'{$this->defaultVal}'");
-        return 'tinyint(1) unsigned not null' . $this->defaultClause($values);
+        $width = $this->shouldUseIntegerWidth() ? '(1)' : '';
+        return 'tinyint' . $width . ' unsigned not null' . $this->defaultClause($values);
     }
 
     /**
@@ -443,10 +461,10 @@ class MySQLSchemaManager extends DBSchemaManager
 
         // Fix format of default value to match precision
         if (isset($values['default']) && is_numeric($values['default'])) {
-            $decs = strpos($precision, ',') !== false
+            $decs = strpos($precision ?? '', ',') !== false
                     ? (int) substr($precision, strpos($precision, ',') + 1)
                     : 0;
-            $values['default'] = number_format($values['default'], $decs, '.', '');
+            $values['default'] = number_format($values['default'] ?? 0.0, $decs ?? 0, '.', '');
         } else {
             unset($values['default']);
         }
@@ -518,7 +536,8 @@ class MySQLSchemaManager extends DBSchemaManager
         //For reference, this is what typically gets passed to this function:
         //$parts=Array('datatype'=>'int', 'precision'=>11, 'null'=>'not null', 'default'=>(int)$this->default);
         //DB::requireField($this->tableName, $this->name, "int(11) not null default '{$this->defaultVal}'");
-        return "int(11) not null" . $this->defaultClause($values);
+        $width = $this->shouldUseIntegerWidth() ? '(11)' : '';
+        return 'int' . $width . ' not null' . $this->defaultClause($values);
     }
 
     /**
@@ -534,8 +553,8 @@ class MySQLSchemaManager extends DBSchemaManager
         //             'arrayValue'=>$this->arrayValue);
         //$values=Array('type'=>'bigint', 'parts'=>$parts);
         //DB::requireField($this->tableName, $this->name, $values);
-
-        return 'bigint(20) not null' . $this->defaultClause($values);
+        $width = $this->shouldUseIntegerWidth() ? '(20)' : '';
+        return 'bigint' . $width . ' not null' . $this->defaultClause($values);
     }
 
     /**
@@ -616,7 +635,8 @@ class MySQLSchemaManager extends DBSchemaManager
 
     public function IdColumn($asDbValue = false, $hasAutoIncPK = true)
     {
-        return 'int(11) not null auto_increment';
+        $width = $this->shouldUseIntegerWidth() ? '(11)' : '';
+        return 'int' . $width . ' not null auto_increment';
     }
 
     /**

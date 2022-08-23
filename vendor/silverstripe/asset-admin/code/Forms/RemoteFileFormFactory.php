@@ -2,8 +2,8 @@
 
 namespace SilverStripe\AssetAdmin\Forms;
 
-use Embed\Exceptions\InvalidUrlException;
 use InvalidArgumentException;
+use SilverStripe\AssetAdmin\Exceptions\InvalidRemoteUrlException;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\RequestHandler;
 use SilverStripe\Core\Config\Configurable;
@@ -113,7 +113,7 @@ class RemoteFileFormFactory implements FormFactory
         $form = Form::create($controller, $name, $fields, $actions, $validator);
         $form->addExtraClass('form--fill-height');
         $form->addExtraClass('form--no-dividers');
-        $form->addExtraClass('insert-embed-modal--'. strtolower($context['type']));
+        $form->addExtraClass('insert-embed-modal--'. strtolower($context['type'] ?? ''));
 
         // Extend form
         $this->invokeWithExtensions('updateForm', $form, $controller, $name, $context);
@@ -164,7 +164,7 @@ class RemoteFileFormFactory implements FormFactory
     /**
      * @param string $url
      * @return bool
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function validateUrl($url)
     {
@@ -181,12 +181,12 @@ class RemoteFileFormFactory implements FormFactory
      *
      * @param Embeddable $embed
      * @return bool
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function validateEmbed(Embeddable $embed)
     {
         if (!$embed->validate()) {
-            throw new InvalidUrlException(_t(
+            throw new InvalidRemoteUrlException(_t(
                 __CLASS__.'.ERROR_EMBED',
                 'There is currently no embeddable media available from this URL'
             ));
@@ -220,7 +220,7 @@ class RemoteFileFormFactory implements FormFactory
      *
      * @param array $context
      * @return FieldList
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function getEditFormFields($context)
     {
@@ -230,7 +230,7 @@ class RemoteFileFormFactory implements FormFactory
             return $this->getCreateFormFields();
         }
 
-        $url = trim($url);
+        $url = trim($url ?? '');
 
         // Get embed
         $this->validateUrl($url);
@@ -312,18 +312,18 @@ class RemoteFileFormFactory implements FormFactory
 
     /**
      * @param string $url
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function validateURLScheme($url)
     {
-        $scheme = strtolower(parse_url($url, PHP_URL_SCHEME));
+        $scheme = strtolower(parse_url($url ?? '', PHP_URL_SCHEME) ?? '');
         $allowedSchemes = self::config()->get('fileurl_scheme_whitelist');
         $disallowedSchemes = self::config()->get('fileurl_scheme_blacklist');
         if (!$scheme
-            || ($allowedSchemes && !in_array($scheme, $allowedSchemes))
-            || ($disallowedSchemes && in_array($scheme, $disallowedSchemes))
+            || ($allowedSchemes && !in_array($scheme, $allowedSchemes ?? []))
+            || ($disallowedSchemes && in_array($scheme, $disallowedSchemes ?? []))
         ) {
-            throw new InvalidUrlException(_t(
+            throw new InvalidRemoteUrlException(_t(
                 __CLASS__ . '.ERROR_SCHEME',
                 'This file scheme is not allowed'
             ));
@@ -332,18 +332,18 @@ class RemoteFileFormFactory implements FormFactory
 
     /**
      * @param string $url
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function validateURLHost($url)
     {
-        $domain = strtolower(parse_url($url, PHP_URL_HOST));
+        $domain = strtolower(parse_url($url ?? '', PHP_URL_HOST) ?? '');
         $allowedDomains = self::config()->get('fileurl_domain_whitelist');
         $disallowedDomains = self::config()->get('fileurl_domain_blacklist');
         if (!$domain
-            || ($allowedDomains && !in_array($domain, $allowedDomains))
-            || ($disallowedDomains && in_array($domain, $disallowedDomains))
+            || ($allowedDomains && !in_array($domain, $allowedDomains ?? []))
+            || ($disallowedDomains && in_array($domain, $disallowedDomains ?? []))
         ) {
-            throw new InvalidUrlException(_t(
+            throw new InvalidRemoteUrlException(_t(
                 __CLASS__ . '.ERROR_HOSTNAME',
                 'This file hostname is not allowed'
             ));
@@ -352,20 +352,20 @@ class RemoteFileFormFactory implements FormFactory
 
     /**
      * @param string $url
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function validateURLPort($url)
     {
-        $port = (int)parse_url($url, PHP_URL_PORT);
+        $port = (int)parse_url($url ?? '', PHP_URL_PORT);
         if (!$port) {
             return;
         }
         $allowedPorts = self::config()->get('fileurl_port_whitelist');
         $disallowedPorts = self::config()->get('fileurl_port_blacklist');
-        if (($allowedPorts && !in_array($port, $allowedPorts))
-            || ($disallowedPorts && in_array($port, $disallowedPorts))
+        if (($allowedPorts && !in_array($port, $allowedPorts ?? []))
+            || ($disallowedPorts && in_array($port, $disallowedPorts ?? []))
         ) {
-            throw new InvalidUrlException(_t(
+            throw new InvalidRemoteUrlException(_t(
                 __CLASS__ . '.ERROR_PORT',
                 'This file port is not allowed'
             ));
@@ -374,12 +374,12 @@ class RemoteFileFormFactory implements FormFactory
 
     /**
      * @param string $url
-     * @throws InvalidUrlException
+     * @throws InvalidRemoteUrlException
      */
     protected function validateURLAbsolute($url)
     {
         if (!Director::is_absolute_url($url)) {
-            throw new InvalidUrlException(_t(
+            throw new InvalidRemoteUrlException(_t(
                 __CLASS__ . '.ERROR_ABSOLUTE',
                 'Only absolute urls can be embedded'
             ));

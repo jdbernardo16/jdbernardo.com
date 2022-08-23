@@ -4,6 +4,7 @@ namespace SilverStripe\Security;
 
 use SilverStripe\Admin\SecurityAdmin;
 use SilverStripe\Core\Convert;
+use SilverStripe\Forms\CompositeValidator;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
@@ -21,6 +22,7 @@ use SilverStripe\Forms\HiddenField;
 use SilverStripe\Forms\HTMLEditor\HTMLEditorConfig;
 use SilverStripe\Forms\ListboxField;
 use SilverStripe\Forms\LiteralField;
+use SilverStripe\Forms\RequiredFields;
 use SilverStripe\Forms\Tab;
 use SilverStripe\Forms\TabSet;
 use SilverStripe\Forms\TextareaField;
@@ -82,6 +84,12 @@ class Group extends DataObject
     ];
 
     private static $table_name = "Group";
+
+    private static $indexes = [
+        'Title' => true,
+        'Code' => true,
+        'Sort' => true,
+    ];
 
     public function getAllChildren()
     {
@@ -151,11 +159,11 @@ class Group extends DataObject
         if ($this->ID) {
             $group = $this;
             $config = GridFieldConfig_RelationEditor::create();
-            $config->addComponent(new GridFieldButtonRow('after'));
-            $config->addComponents(new GridFieldExportButton('buttons-after-left'));
-            $config->addComponents(new GridFieldPrintButton('buttons-after-left'));
+            $config->addComponent(GridFieldButtonRow::create('after'));
+            $config->addComponents(GridFieldExportButton::create('buttons-after-left'));
+            $config->addComponents(GridFieldPrintButton::create('buttons-after-left'));
             $config->removeComponentsByType(GridFieldDeleteAction::class);
-            $config->addComponent(new GridFieldGroupDeleteAction($this->ID), GridFieldPageCount::class);
+            $config->addComponent(GridFieldGroupDeleteAction::create($this->ID), GridFieldPageCount::class);
 
             /** @var GridFieldAddExistingAutocompleter $autocompleter */
             $autocompleter = $config->getComponentByType(GridFieldAddExistingAutocompleter::class);
@@ -196,7 +204,7 @@ class Group extends DataObject
         // Only add a dropdown for HTML editor configurations if more than one is available.
         // Otherwise Member->getHtmlEditorConfigForCMS() will default to the 'cms' configuration.
         $editorConfigMap = HTMLEditorConfig::get_available_configs_map();
-        if (count($editorConfigMap) > 1) {
+        if (count($editorConfigMap ?? []) > 1) {
             $fields->addFieldToTab(
                 'Root.Permissions',
                 new DropdownField(
@@ -233,7 +241,7 @@ class Group extends DataObject
                         '<a href="%s" class="add-role">%s</a>',
                         SecurityAdmin::singleton()->Link('show/root#Root_Roles'),
                         // TODO This should include #Root_Roles to switch directly to the tab,
-                        // but tabstrip.js doesn't display tabs when directly adressed through a URL pragma
+                        // but tabstrip.js doesn't display tabs when directly addressed through a URL pragma
                         _t('SilverStripe\\Security\\Group.RolesAddEditLink', 'Manage roles')
                     ) .
                     "</p>"
@@ -394,7 +402,7 @@ class Group extends DataObject
      */
     public function inGroup($group)
     {
-        return in_array($this->identifierToGroupID($group), $this->collateAncestorIDs());
+        return in_array($this->identifierToGroupID($group), $this->collateAncestorIDs() ?? []);
     }
 
     /**
@@ -419,9 +427,9 @@ class Group extends DataObject
         if (empty($candidateIDs)) {
             return false;
         }
-        $matches = array_intersect($candidateIDs, $ancestorIDs);
+        $matches = array_intersect($candidateIDs ?? [], $ancestorIDs);
         if ($requireAll) {
-            return count($candidateIDs) === count($matches);
+            return count($candidateIDs ?? []) === count($matches ?? []);
         }
         return !empty($matches);
     }
@@ -468,7 +476,7 @@ class Group extends DataObject
      */
     public function getTreeTitle()
     {
-        $title = htmlspecialchars($this->Title, ENT_QUOTES);
+        $title = htmlspecialchars($this->Title ?? '', ENT_QUOTES);
         $this->extend('updateTreeTitle', $title);
         return $title;
     }
@@ -480,7 +488,7 @@ class Group extends DataObject
      */
     public function setCode($val)
     {
-        $this->setField("Code", Convert::raw2url($val));
+        $this->setField('Code', Convert::raw2url($val));
     }
 
     public function validate()
@@ -495,7 +503,7 @@ class Group extends DataObject
                 ->filter('GroupID', $this->Parent()->collateAncestorIDs())
                 ->column('Code');
             $privilegedCodes = Permission::config()->get('privileged_permissions');
-            if (array_intersect($inheritedCodes, $privilegedCodes)) {
+            if (array_intersect($inheritedCodes ?? [], $privilegedCodes)) {
                 $result->addError(
                     _t(
                         'SilverStripe\\Security\\Group.HierarchyPermsError',
@@ -506,7 +514,33 @@ class Group extends DataObject
             }
         }
 
+        $currentGroups = Group::get()
+            ->filter('ID:not', $this->ID)
+            ->map('Code', 'Title')
+            ->toArray();
+
+        if (in_array($this->Title, $currentGroups)) {
+            $result->addError(
+                _t(
+                    'SilverStripe\\Security\\Group.ValidationIdentifierAlreadyExists',
+                    'A Group ({group}) already exists with the same {identifier}',
+                    ['group' => $this->Title, 'identifier' => 'Title']
+                )
+            );
+        }
+
         return $result;
+    }
+
+    public function getCMSCompositeValidator(): CompositeValidator
+    {
+        $validator = parent::getCMSCompositeValidator();
+
+        $validator->addValidator(RequiredFields::create([
+            'Title'
+        ]));
+
+        return $validator;
     }
 
     public function onBeforeWrite()
@@ -519,6 +553,9 @@ class Group extends DataObject
         if (!$this->Code && $this->Title != _t(__CLASS__ . '.NEWGROUP', "New Group")) {
             $this->setCode($this->Title);
         }
+
+        // Make sure the code for this group is unique.
+        $this->dedupeCode();
     }
 
     public function onBeforeDelete()
@@ -678,5 +715,26 @@ class Group extends DataObject
         }
 
         // Members are populated through Member->requireDefaultRecords()
+    }
+
+    /**
+     * Code needs to be unique as it is used to identify a specific group. Ensure no duplicate
+     * codes are created.
+     *
+     * @deprecated 5.0 Remove deduping in favour of throwing a validation error for duplicates.
+     */
+    private function dedupeCode(): void
+    {
+        $currentGroups = Group::get()
+            ->exclude('ID', $this->ID)
+            ->map('Code', 'Title')
+            ->toArray();
+        $code = $this->Code;
+        $count = 2;
+        while (isset($currentGroups[$code])) {
+            $code = $this->Code . '-' . $count;
+            $count++;
+        }
+        $this->setField('Code', $code);
     }
 }

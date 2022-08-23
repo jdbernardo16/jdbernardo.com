@@ -6,5 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'ML\\IRI' => array($vendorDir . '/ml/iri'),
     'FileUpload\\' => array($vendorDir . '/gargron/fileupload/src'),
 );

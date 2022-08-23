@@ -5,6 +5,7 @@ namespace SilverStripe\AssetAdmin\Tests\Behat\Context;
 use Behat\Mink\Element\DocumentElement;
 use Behat\Mink\Element\NodeElement;
 use Page;
+use PHPUnit\Framework\Assert;
 use SilverStripe\Assets\Image;
 use SilverStripe\BehatExtension\Context\FixtureContext as BaseFixtureContext;
 use SilverStripe\BehatExtension\Utility\StepHelper;
@@ -25,7 +26,7 @@ class FixtureContext extends BaseFixtureContext
     public function stepISelectGalleryItem($name)
     {
         $item = $this->getGalleryItem($name);
-        assertNotNull($item, "File named $name could not be found");
+        Assert::assertNotNull($item, "File named $name could not be found");
         $item->click();
     }
 
@@ -37,9 +38,9 @@ class FixtureContext extends BaseFixtureContext
     public function stepICheckTheGalleryItem($name)
     {
         $item = $this->getGalleryItem($name);
-        assertNotNull($item, "File named $name could not be found");
+        Assert::assertNotNull($item, "File named $name could not be found");
         $checkboxLabel = $item->find('css', 'label.gallery-item__checkbox-label.font-icon-tick');
-        assertNotNull($checkboxLabel, "Could not find checkbox label for file named {$name}");
+        Assert::assertNotNull($checkboxLabel, "Could not find checkbox label for file named {$name}");
         $checkboxLabel->click();
     }
 
@@ -50,7 +51,7 @@ class FixtureContext extends BaseFixtureContext
     public function iShouldSeeTheGalleryItem($name)
     {
         $item = $this->getGalleryItem($name);
-        assertNotNull($item, "File named {$name} could not be found");
+        Assert::assertNotNull($item, "File named {$name} could not be found");
     }
 
     /**
@@ -60,7 +61,7 @@ class FixtureContext extends BaseFixtureContext
     public function iShouldNotSeeTheGalleryItem($name)
     {
         $item = $this->getGalleryItem($name, 0);
-        assertNull($item, "File named {$name} was found when it should not be visible");
+        Assert::assertNull($item, "File named {$name} was found when it should not be visible");
     }
 
     /**
@@ -75,8 +76,8 @@ class FixtureContext extends BaseFixtureContext
         $form = $this->retryThrowable(function () use ($page, $id) {
             return $page->find('css', "form#{$id}");
         }, $timeout);
-        assertNotNull($form, "form with id $id could not be found");
-        assertTrue($form->isVisible(), "form with id $id is not visible");
+        Assert::assertNotNull($form, "form with id $id could not be found");
+        Assert::assertTrue($form->isVisible(), "form with id $id is not visible");
     }
 
     /**
@@ -92,8 +93,8 @@ class FixtureContext extends BaseFixtureContext
 
         $page = $this->getMainContext()->getSession()->getPage();
         $flag = $page->find('css', '.editor__status-flag');
-        assertNotNull($flag, "File editor status flag could not be found");
-        assertTrue($flag->isVisible(), "File status flag is not visible");
+        Assert::assertNotNull($flag, "File editor status flag could not be found");
+        Assert::assertTrue($flag->isVisible(), "File status flag is not visible");
     }
 
     /**
@@ -104,7 +105,7 @@ class FixtureContext extends BaseFixtureContext
         // TODO Flakey assertion, since the status flag might not be loaded via XHR yet
         $page = $this->getMainContext()->getSession()->getPage();
         $flag = $page->find('css', '.editor__status-flag');
-        assertNull($flag, "File editor status flag should not be present");
+        Assert::assertNull($flag, "File editor status flag should not be present");
     }
 
     /**
@@ -116,8 +117,8 @@ class FixtureContext extends BaseFixtureContext
         $js = "window.jQuery && window.jQuery('.file-status-icon__icon').size() > 0";
         $this->getMainContext()->getSession()->wait(1000, $js);
         $icon = $this->getMainContext()->getSession()->getPage()->find('css', "{$class}.file-status-icon__icon");
-        assertNotNull($icon, "File status icon '$class' could not be found");
-        assertTrue($icon->isVisible(), "File status icon '$class' is not visible");
+        Assert::assertNotNull($icon, "File status icon '$class' could not be found");
+        Assert::assertTrue($icon->isVisible(), "File status icon '$class' is not visible");
     }
 
     /**
@@ -128,7 +129,39 @@ class FixtureContext extends BaseFixtureContext
     {
         $this->getMainContext()->getSession()->wait(2500);
         $icon = $this->getMainContext()->getSession()->getPage()->find('css', "{$id}.file-status-icon");
-        assertNull($icon, "File status icon '$id' was found");
+        Assert::assertNull($icon, "File status icon '$id' was found");
+    }
+
+
+    /**
+     * @Given /^I click on the breadcrumb link "([^"]+)"$/
+     * @param string $name
+     */
+    public function stepIClickBreadcrumbLink($name)
+    {
+        $link = $this->getBreadcrumbLink($name);
+        Assert::assertNotNull($link, "Breadcrumb link named '$name' could not be found");
+        $link->click();
+    }
+
+    /**
+     * @Then /^I should see the breadcrumb link "([^"]*)"/
+     * @param string $name
+     */
+    public function iShouldSeeTheBreadcrumbLink($name)
+    {
+        $link = $this->getBreadcrumbLink($name);
+        Assert::assertNotNull($link, "Breadcrumb link named '$name' could not be found");
+    }
+
+    /**
+     * @Then /^I should not see the breadcrumb link "([^"]*)"/
+     * @param string $name
+     */
+    public function iShouldNotSeeTheBreadcrumbLink($name)
+    {
+        $link = $this->getBreadcrumbLink($name);
+        Assert::assertNull($link, "Breadcrumb link named '$name' was found when it should not be visible");
     }
 
     /**
@@ -163,20 +196,20 @@ class FixtureContext extends BaseFixtureContext
         // Get path
         $filesPath = $this->getFilesPath();
         if ($filesPath) {
-            $fullPath = rtrim(realpath($filesPath), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$path;
-            if (is_file($fullPath)) {
+            $fullPath = rtrim(realpath($filesPath ?? '') ?? '', DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$path;
+            if (is_file($fullPath ?? '')) {
                 $path = $fullPath;
             }
         }
 
-        assertFileExists($path, "$path does not exist");
+        Assert::assertFileExists($path, "$path does not exist");
         // Find field
         $selector = "input[type=\"file\"].dz-hidden-input.dz-input-{$name}";
 
         /** @var DocumentElement $page */
         $page = $this->getMainContext()->getSession()->getPage();
         $input = $page->find('css', $selector);
-        assertNotNull($input, "Could not find {$selector}");
+        Assert::assertNotNull($input, "Could not find {$selector}");
 
         // Make visible temporarily while attaching
         $this->getMainContext()->getSession()->executeScript(
@@ -200,7 +233,7 @@ EOS
     public function iShouldSeeAnErrorMessageOnTheFile($file)
     {
         $fileNode = $this->getGalleryItem($file);
-        assertTrue($fileNode->getParent()->hasClass('gallery-item--error'));
+        Assert::assertTrue($fileNode->getParent()->hasClass('gallery-item--error'));
     }
 
     /**
@@ -215,7 +248,7 @@ EOS
         $mainContext = $this->getMainContext();
         $mainContext
             ->assertSession()
-            ->elementTextContains('css', '.message-box', str_replace('\\"', '"', $text));
+            ->elementTextContains('css', '.message-box', str_replace('\\"', '"', $text ?? ''));
     }
 
     /**
@@ -246,6 +279,23 @@ EOS
             return $row;
         }
         return null;
+    }
+
+    /**
+     * Helper for finding breadcrumb links
+     *
+     * @param string $name Title of item
+     * @return NodeElement
+     */
+    protected function getBreadcrumbLink(string $name): ?NodeElement
+    {
+        /** @var DocumentElement $page */
+        $page = $this->getMainContext()->getSession()->getPage();
+        $link = $page->find(
+            'xpath',
+            "//li[contains(@class, 'breadcrumb__item')]//a[contains(@class, 'breadcrumb__item-title')][text()='$name']"
+        );
+        return $link;
     }
 
     /**
@@ -335,8 +385,8 @@ EOS
     {
         $page = $this->getMainContext()->getSession()->getPage();
         $modalTitle = $page->find('css', '[role=dialog] .modal-header > .modal-title');
-        assertNotNull($modalTitle, 'No modal on the page');
-        assertTrue($modalTitle->getText() == $title);
+        Assert::assertNotNull($modalTitle, 'No modal on the page');
+        Assert::assertTrue($modalTitle->getText() == $title);
     }
 
     /**
@@ -347,12 +397,12 @@ EOS
     {
         $page = $this->getMainContext()->getSession()->getPage();
         $modal = $page->find('css', '[role=dialog] .modal-dialog');
-        assertNotNull($modal, 'No modal on the page');
+        Assert::assertNotNull($modal, 'No modal on the page');
 
         // Check if the popover is open for the block
         $button = $modal->find('xpath', "//button[contains(text(), '$buttonName')]");
 
-        assertNotNull($button, sprintf('Could not find button labelled "%s"', $buttonName));
+        Assert::assertNotNull($button, sprintf('Could not find button labelled "%s"', $buttonName));
 
         $button->click();
     }
@@ -365,7 +415,7 @@ EOS
     public function iShouldSeeTheGalleryItemInPosition($name, $position)
     {
         $itemByPosition = $this->getGalleryItemByRank($position);
-        assertNotNull($itemByPosition, 'Should have found a fallery item at position ' . $position);
+        Assert::assertNotNull($itemByPosition, 'Should have found a fallery item at position ' . $position);
         $title = $itemByPosition->find(
             'xpath',
             "//div[contains(text(), '{$name}')]"
@@ -373,7 +423,7 @@ EOS
             'xpath',
             "//div//span[contains(text(), '{$name}')]"
         );
-        assertNotNull($title, sprintf('File at position %s should be named %s', $position, $name));
+        Assert::assertNotNull($title, sprintf('File at position %s should be named %s', $position, $name));
     }
 
     /**
@@ -384,12 +434,12 @@ EOS
     public function iShouldSeeTheTableGalleryFolderInPosition(string $name, string $position)
     {
         $folderByPosition = $this->getTableGalleryFolderByRank($position);
-        assertNotNull($folderByPosition, 'Should have found a gallery folder at position ' . $position);
+        Assert::assertNotNull($folderByPosition, 'Should have found a gallery folder at position ' . $position);
         $title = $folderByPosition->find(
             'xpath',
             "//div[contains(text(), '{$name}')]"
         );
-        assertNotNull($title, sprintf('Folder at position %s should be named %s', $position, $name));
+        Assert::assertNotNull($title, sprintf('Folder at position %s should be named %s', $position, $name));
     }
 
     /**
@@ -403,7 +453,7 @@ EOS
     {
         $inputField = $this->getHtmlField($field);
         $inputFieldId = $inputField->getAttribute('id');
-        $filename = addcslashes($filename, "'");
+        $filename = addcslashes($filename ?? '', "'");
         $js = <<<JS
 var editor = jQuery('#$inputFieldId').entwine('ss').getEditor(),
 	doc = editor.getInstance().getDoc(),
@@ -433,7 +483,7 @@ JS;
      */
     protected function getHtmlField($locator)
     {
-        $locator = str_replace('\\"', '"', $locator);
+        $locator = str_replace('\\"', '"', $locator ?? '');
         $page = $this->getMainContext()->getSession()->getPage();
         $element = $page->find('css', 'textarea.htmleditor[name=\'' . $locator . '\']');
         if ($element) {
@@ -441,12 +491,12 @@ JS;
         }
         $label = $page->findAll('xpath', sprintf('//label[contains(text(), \'%s\')]', $locator));
         if (!empty($label)) {
-            assertCount(1, $label, "Found more than one element containing the phrase \"$locator\"");
+            Assert::assertCount(1, $label, "Found more than one element containing the phrase \"$locator\"");
             $label = array_shift($label);
             $fieldId = $label->getAttribute('for');
             $element = $page->find('css', '#' . $fieldId);
         }
-        assertNotNull($element, sprintf('HTML field "%s" not found', $locator));
+        Assert::assertNotNull($element, sprintf('HTML field "%s" not found', $locator));
         return $element;
     }
 
@@ -457,5 +507,31 @@ JS;
     {
         $script = "document.querySelector('.editor__details fieldset').scrollTo(0, 0);";
         $this->getMainContext()->getSession()->executeScript($script);
+    }
+
+    /**
+     * Example: Given the maximum file size is 5k
+     *
+     * @Given /^the maximum file size is "([^"]+)"$/
+     * @param string $size Max file size
+     */
+    public function stepCreateMaximumFileSizeStep($size): void
+    {
+        $config = <<<YAML
+        ---
+        name: fileallowedsize
+        ---
+
+        SilverStripe\Assets\Upload_Validator:
+            default_max_file_size:
+                '*': $size
+        YAML;
+
+        $file = 'file-allowed-size.yml';
+        $path = $this->getDestinationConfigFolder($file);
+        file_put_contents($path, $config);
+
+        $this->activatedConfigFiles[] = $path;
+        $this->getMainContext()->visit('dev/build?flush');
     }
 }

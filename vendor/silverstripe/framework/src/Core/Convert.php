@@ -2,12 +2,11 @@
 
 namespace SilverStripe\Core;
 
+use InvalidArgumentException;
+use SimpleXMLElement;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\ORM\DB;
 use SilverStripe\View\Parsers\URLSegmentFilter;
-use InvalidArgumentException;
-use SimpleXMLElement;
-use Exception;
 
 /**
  * Library of conversion functions, implemented as static methods.
@@ -29,7 +28,6 @@ use Exception;
  */
 class Convert
 {
-
     /**
      * Convert a value to be suitable for an XML attribute.
      *
@@ -107,8 +105,8 @@ class Convert
             preg_replace(
                 '/_+/',
                 '_',
-                preg_replace('/[^a-zA-Z0-9\-_:.]+/', '_', $val)
-            ),
+                preg_replace('/[^a-zA-Z0-9\-_:.]+/', '_', $val ?? '') ?? ''
+            ) ?? '',
             '_'
         );
     }
@@ -131,7 +129,7 @@ class Convert
             return $val;
         }
 
-        return htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
+        return htmlspecialchars($val ?? '', ENT_QUOTES, 'UTF-8');
     }
 
     /**
@@ -155,7 +153,7 @@ class Convert
             // Intercepts some characters such as <, >, and & which can interfere
             ["\\", '"', "\n", "\r", "'", '<', '>', '&'],
             ["\\\\", '\"', '\n', '\r', "\\'", "\\x3c", "\\x3e", "\\x26"],
-            $val
+            $val ?? ''
         );
     }
 
@@ -172,7 +170,7 @@ class Convert
     {
         Deprecation::notice('4.4', 'Please use json_encode() instead.');
 
-        return json_encode($val, $options);
+        return json_encode($val, $options ?? 0);
     }
 
     /**
@@ -187,7 +185,7 @@ class Convert
     {
         Deprecation::notice('4.4', 'Please use json_encode() instead.');
 
-        return json_encode($val, $options);
+        return json_encode($val, $options ?? 0);
     }
 
     /**
@@ -253,11 +251,11 @@ class Convert
         }
 
         // More complex text needs to use html2raw instead
-        if (strpos($val, '<') !== false) {
+        if (strpos($val ?? '', '<') !== false) {
             return self::html2raw($val);
         }
 
-        return html_entity_decode($val, ENT_QUOTES, 'UTF-8');
+        return html_entity_decode($val ?? '', ENT_QUOTES, 'UTF-8');
     }
 
     /**
@@ -271,7 +269,7 @@ class Convert
     {
         Deprecation::notice('4.4', 'Please use json_decode() instead.');
 
-        return json_decode($val);
+        return json_decode($val ?? '');
     }
 
     /**
@@ -285,7 +283,7 @@ class Convert
     {
         Deprecation::notice('4.4', 'Please use json_decode() instead.');
 
-        return json_decode($val, true);
+        return json_decode($val ?? '', true);
     }
 
     /**
@@ -296,40 +294,34 @@ class Convert
      * @param string $val
      * @param boolean $disableDoctypes Disables the use of DOCTYPE, and will trigger an error if encountered.
      * false by default.
-     * @param boolean $disableExternals Disables the loading of external entities. false by default. No-op in PHP 8.
+     * @param boolean $disableExternals Does nothing because xml entities are removed
+     * @deprecated 4.11.0:5.0.0
      * @return array
      * @throws Exception
      */
     public static function xml2array($val, $disableDoctypes = false, $disableExternals = false)
     {
-        // PHP 8 deprecates libxml_disable_entity_loader() as it is no longer needed
-        if (\PHP_VERSION_ID >= 80000) {
-            $disableExternals = false;
-        }
+        Deprecation::notice('4.10', 'Use a dedicated XML library instead');
 
         // Check doctype
-        if ($disableDoctypes && preg_match('/\<\!DOCTYPE.+]\>/', $val)) {
+        if ($disableDoctypes && strpos($val ?? '', '<!DOCTYPE') !== false) {
             throw new InvalidArgumentException('XML Doctype parsing disabled');
         }
 
-        // Disable external entity loading
-        $oldVal = null;
-        if ($disableExternals) {
-            $oldVal = libxml_disable_entity_loader($disableExternals);
+        // CVE-2021-41559 Ensure entities are removed due to their inherent security risk via
+        // XXE attacks and quadratic blowup attacks, and also lack of consistent support
+        $val = preg_replace('/(?s)<!ENTITY.*?>/', '', $val ?? '');
+
+        // If there's still an <!ENTITY> present, then it would be the result of a maliciously
+        // crafted XML document e.g. <!ENTITY><!<!ENTITY>ENTITY ext SYSTEM "http://evil.com">
+        if (strpos($val ?? '', '<!ENTITY') !== false) {
+            throw new InvalidArgumentException('Malicious XML entity detected');
         }
-        try {
-            $xml = new SimpleXMLElement($val);
-            $result = self::recursiveXMLToArray($xml);
-        } catch (Exception $ex) {
-            if ($disableExternals) {
-                libxml_disable_entity_loader($oldVal);
-            }
-            throw $ex;
-        }
-        if ($disableExternals) {
-            libxml_disable_entity_loader($oldVal);
-        }
-        return $result;
+
+        // This will throw an exception if the XML contains references to any internal entities
+        // that were defined in an <!ENTITY /> before it was removed
+        $xml = new SimpleXMLElement($val ?? '');
+        return self::recursiveXMLToArray($xml);
     }
 
     /**
@@ -354,7 +346,7 @@ class Convert
             $xml = get_object_vars($xml);
         }
         if (is_array($xml)) {
-            if (count($xml) === 0) {
+            if (count($xml ?? []) === 0) {
                 return (string)$x;
             } // for CDATA
             $r = [];
@@ -379,7 +371,7 @@ class Convert
      */
     public static function linkIfMatch($string)
     {
-        if (preg_match('/^[a-z+]+\:\/\/[a-zA-Z0-9$-_.+?&=!*\'()%]+$/', $string)) {
+        if (preg_match('/^[a-z+]+\:\/\/[a-zA-Z0-9$-_.+?&=!*\'()%]+$/', $string ?? '')) {
             return "<a style=\"white-space: nowrap\" href=\"$string\">$string</a>";
         }
 
@@ -409,62 +401,62 @@ class Convert
             $config = $defaultConfig;
         }
 
-        $data = preg_replace("/<style([^A-Za-z0-9>][^>]*)?>.*?<\/style[^>]*>/is", '', $data);
-        $data = preg_replace("/<script([^A-Za-z0-9>][^>]*)?>.*?<\/script[^>]*>/is", '', $data);
+        $data = preg_replace("/<style([^A-Za-z0-9>][^>]*)?>.*?<\/style[^>]*>/is", '', $data ?? '');
+        $data = preg_replace("/<script([^A-Za-z0-9>][^>]*)?>.*?<\/script[^>]*>/is", '', $data ?? '');
 
         if ($config['ReplaceBoldAsterisk']) {
-            $data = preg_replace('%<(strong|b)( [^>]*)?>|</(strong|b)>%i', '*', $data);
+            $data = preg_replace('%<(strong|b)( [^>]*)?>|</(strong|b)>%i', '*', $data ?? '');
         }
 
         // Expand hyperlinks
         if (!$preserveLinks && !$config['PreserveLinks']) {
             $data = preg_replace_callback('/<a[^>]*href\s*=\s*"([^"]*)">(.*?)<\/a>/ui', function ($matches) {
                 return Convert::html2raw($matches[2]) . "[$matches[1]]";
-            }, $data);
+            }, $data ?? '');
             $data = preg_replace_callback('/<a[^>]*href\s*=\s*([^ ]*)>(.*?)<\/a>/ui', function ($matches) {
                 return Convert::html2raw($matches[2]) . "[$matches[1]]";
-            }, $data);
+            }, $data ?? '');
         }
 
         // Replace images with their alt tags
         if ($config['ReplaceImagesWithAlt']) {
-            $data = preg_replace('/<img[^>]*alt *= *"([^"]*)"[^>]*>/i', ' \\1 ', $data);
-            $data = preg_replace('/<img[^>]*alt *= *([^ ]*)[^>]*>/i', ' \\1 ', $data);
+            $data = preg_replace('/<img[^>]*alt *= *"([^"]*)"[^>]*>/i', ' \\1 ', $data ?? '');
+            $data = preg_replace('/<img[^>]*alt *= *([^ ]*)[^>]*>/i', ' \\1 ', $data ?? '');
         }
 
         // Compress whitespace
         if ($config['CompressWhitespace']) {
-            $data = preg_replace("/\s+/u", ' ', $data);
+            $data = preg_replace("/\s+/u", ' ', $data ?? '');
         }
 
         // Parse newline tags
-        $data = preg_replace("/\s*<[Hh][1-6]([^A-Za-z0-9>][^>]*)?> */u", "\n\n", $data);
-        $data = preg_replace("/\s*<[Pp]([^A-Za-z0-9>][^>]*)?> */u", "\n\n", $data);
-        $data = preg_replace("/\s*<[Dd][Ii][Vv]([^A-Za-z0-9>][^>]*)?> */u", "\n\n", $data);
-        $data = preg_replace("/\n\n\n+/", "\n\n", $data);
+        $data = preg_replace("/\s*<[Hh][1-6]([^A-Za-z0-9>][^>]*)?> */u", "\n\n", $data ?? '');
+        $data = preg_replace("/\s*<[Pp]([^A-Za-z0-9>][^>]*)?> */u", "\n\n", $data ?? '');
+        $data = preg_replace("/\s*<[Dd][Ii][Vv]([^A-Za-z0-9>][^>]*)?> */u", "\n\n", $data ?? '');
+        $data = preg_replace("/\n\n\n+/", "\n\n", $data ?? '');
 
-        $data = preg_replace('/<[Bb][Rr]([^A-Za-z0-9>][^>]*)?> */', "\n", $data);
-        $data = preg_replace('/<[Tt][Rr]([^A-Za-z0-9>][^>]*)?> */', "\n", $data);
-        $data = preg_replace("/<\/[Tt][Dd]([^A-Za-z0-9>][^>]*)?> */", '    ', $data);
-        $data = preg_replace('/<\/p>/i', "\n\n", $data);
+        $data = preg_replace('/<[Bb][Rr]([^A-Za-z0-9>][^>]*)?> */', "\n", $data ?? '');
+        $data = preg_replace('/<[Tt][Rr]([^A-Za-z0-9>][^>]*)?> */', "\n", $data ?? '');
+        $data = preg_replace("/<\/[Tt][Dd]([^A-Za-z0-9>][^>]*)?> */", '    ', $data ?? '');
+        $data = preg_replace('/<\/p>/i', "\n\n", $data ?? '');
 
         // Replace HTML entities
-        $data = html_entity_decode($data, ENT_QUOTES, 'UTF-8');
+        $data = html_entity_decode($data ?? '', ENT_QUOTES, 'UTF-8');
         // Remove all tags (but optionally keep links)
 
         // strip_tags seemed to be restricting the length of the output
         // arbitrarily. This essentially does the same thing.
         if (!$preserveLinks && !$config['PreserveLinks']) {
-            $data = preg_replace('/<\/?[^>]*>/', '', $data);
+            $data = preg_replace('/<\/?[^>]*>/', '', $data ?? '');
         } else {
-            $data = strip_tags($data, '<a>');
+            $data = strip_tags($data ?? '', '<a>');
         }
 
         // Wrap
         if ($wordWrap) {
-            $data = wordwrap(trim($data), $wordWrap);
+            $data = wordwrap(trim($data ?? ''), $wordWrap ?? 0);
         }
-        return trim($data);
+        return trim($data ?? '');
     }
 
     /**
@@ -483,7 +475,7 @@ class Convert
         return str_ireplace(
             ["\n",'?','=',' ','(',')','&','@','"','\'',';'],
             ['%0A','%3F','%3D','%20','%28','%29','%26','%40','%22','%27','%3B'],
-            $data
+            $data ?? ''
         );
     }
 
@@ -511,7 +503,7 @@ class Convert
      */
     public static function nl2os($data, $nl = PHP_EOL)
     {
-        return preg_replace('~\R~u', $nl, $data);
+        return preg_replace('~\R~u', $nl ?? '', $data ?? '');
     }
 
     /**
@@ -523,7 +515,7 @@ class Convert
      */
     public static function base64url_encode($val)
     {
-        return rtrim(strtr(base64_encode(json_encode($val)), '+/', '~_'), '=');
+        return rtrim(strtr(base64_encode(json_encode($val) ?? ''), '+/', '~_'), '=');
     }
 
     /**
@@ -535,7 +527,7 @@ class Convert
     public static function base64url_decode($val)
     {
         return json_decode(
-            base64_decode(str_pad(strtr($val, '~_', '+/'), strlen($val) % 4, '=', STR_PAD_RIGHT)),
+            base64_decode(str_pad(strtr($val ?? '', '~_', '+/'), strlen($val ?? '') % 4, '=', STR_PAD_RIGHT)) ?? '',
             true
         );
     }
@@ -557,25 +549,25 @@ class Convert
     {
         $return = null;
         $matches = null;
-        if (preg_match('/(^[A-Z]{1,})([A-Z]{1})([a-z]+.*)/', $str, $matches)) {
+        if (preg_match('/(^[A-Z]{1,})([A-Z]{1})([a-z]+.*)/', $str ?? '', $matches)) {
             // If string has trailing lowercase after more than one leading uppercase characters,
             // match everything but the last leading uppercase character.
             $return = implode('', [
-                strtolower($matches[1]),
+                strtolower($matches[1] ?? ''),
                 $matches[2],
                 $matches[3]
             ]);
-        } elseif (preg_match('/(^[A-Z]{1})([a-z]+.*)/', $str, $matches)) {
+        } elseif (preg_match('/(^[A-Z]{1})([a-z]+.*)/', $str ?? '', $matches)) {
             // If string has trailing lowercase after exactly one leading uppercase characters,
             // match everything but the last leading uppercase character.
             $return = implode('', [
-                strtolower($matches[1]),
+                strtolower($matches[1] ?? ''),
                 $matches[2]
             ]);
-        } elseif (preg_match('/^[A-Z]+$/', $str)) {
+        } elseif (preg_match('/^[A-Z]+$/', $str ?? '')) {
             // If string has leading uppercase without trailing lowercase,
             // just lowerase the whole thing.
-            $return = strtolower($str);
+            $return = strtolower($str ?? '');
         } else {
             // If string has no leading uppercase, just return.
             $return = $str;
@@ -594,17 +586,17 @@ class Convert
     public static function memstring2bytes($memString)
     {
         // Remove  non-unit characters from the size
-        $unit = preg_replace('/[^bkmgtpezy]/i', '', $memString);
+        $unit = preg_replace('/[^bkmgtpezy]/i', '', $memString ?? '');
         // Remove non-numeric characters from the size
-        $size = preg_replace('/[^0-9\.\-]/', '', $memString);
+        $size = preg_replace('/[^0-9\.\-]/', '', $memString ?? '');
 
         if ($unit) {
             // Find the position of the unit in the ordered string which is the power
             // of magnitude to multiply a kilobyte by
-            return (int)round($size * pow(1024, stripos('bkmgtpezy', $unit[0])));
+            return (int)round($size * pow(1024, stripos('bkmgtpezy', $unit[0] ?? '')));
         }
 
-        return (int)round($size);
+        return (int)round($size ?? 0.0);
     }
 
     /**
@@ -616,18 +608,18 @@ class Convert
     {
         $scales = ['B','K','M','G','T','P','E','Z','Y'];
         // Get scale
-        $scale = (int)floor(log($bytes, 1024));
+        $scale = (int)floor(log($bytes ?? 0.0, 1024));
         if (!isset($scales[$scale])) {
             $scale = 2;
         }
 
         // Size
-        $num = round($bytes / pow(1024, $scale), $decimal);
+        $num = round($bytes / pow(1024, $scale), $decimal ?? 0);
         return $num . $scales[$scale];
     }
 
     /**
-     * Convert slashes in relative or asolute filesystem path. Defaults to DIRECTORY_SEPARATOR
+     * Convert slashes in relative or absolute filesystem path. Defaults to DIRECTORY_SEPARATOR
      *
      * @param string $path
      * @param string $separator
@@ -637,8 +629,8 @@ class Convert
     public static function slashes($path, $separator = DIRECTORY_SEPARATOR, $multiple = true)
     {
         if ($multiple) {
-            return preg_replace('#[/\\\\]+#', $separator, $path);
+            return preg_replace('#[/\\\\]+#', $separator ?? '', $path ?? '');
         }
-        return str_replace(['/', '\\'], $separator, $path);
+        return str_replace(['/', '\\'], $separator ?? '', $path ?? '');
     }
 }

@@ -3,6 +3,7 @@
 namespace SilverStripe\Control\Email;
 
 use DateTime;
+use RuntimeException;
 use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\RFCValidation;
 use SilverStripe\Control\Director;
@@ -18,6 +19,7 @@ use SilverStripe\View\SSViewer;
 use SilverStripe\View\ThemeResourceLoader;
 use SilverStripe\View\ViewableData;
 use Swift_Message;
+use Swift_Mime_SimpleMessage;
 use Swift_MimePart;
 
 /**
@@ -25,7 +27,6 @@ use Swift_MimePart;
  */
 class Email extends ViewableData
 {
-
     /**
      * @var array
      * @config
@@ -260,7 +261,10 @@ class Email extends ViewableData
     public function getSwiftMessage()
     {
         if (!$this->swiftMessage) {
-            $this->setSwiftMessage(new Swift_Message(null, null, 'text/html', 'utf-8'));
+            $message = new Swift_Message(null, null, 'text/html', 'utf-8');
+            // Set priority to fix PHP 8.1 SimpleMessage::getPriority() sscanf() null parameter
+            $message->setPriority(Swift_Mime_SimpleMessage::PRIORITY_NORMAL);
+            $this->setSwiftMessage($message);
         }
 
         return $this->swiftMessage;
@@ -276,12 +280,40 @@ class Email extends ViewableData
         $dateTime = new DateTime();
         $dateTime->setTimestamp(DBDatetime::now()->getTimestamp());
         $swiftMessage->setDate($dateTime);
-        if (!$swiftMessage->getFrom() && ($defaultFrom = $this->config()->get('admin_email'))) {
-            $swiftMessage->setFrom($defaultFrom);
+        if (!$swiftMessage->getFrom()) {
+            $swiftMessage->setFrom($this->getDefaultFrom());
         }
         $this->swiftMessage = $swiftMessage;
 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    private function getDefaultFrom(): string
+    {
+        // admin_email can have a string or an array config
+        // https://docs.silverstripe.org/en/4/developer_guides/email/#administrator-emails
+        $adminEmail = $this->config()->get('admin_email');
+        if (is_array($adminEmail) && count($adminEmail ?? []) > 0) {
+            $defaultFrom = array_keys($adminEmail)[0];
+        } else {
+            if (is_string($adminEmail)) {
+                $defaultFrom = $adminEmail;
+            } else {
+                $defaultFrom = '';
+            }
+        }
+        if (empty($defaultFrom)) {
+            $host = Director::host();
+            if (empty($host)) {
+                throw new RuntimeException('Host not defined');
+            }
+            $defaultFrom = sprintf('no-reply@%s', $host);
+        }
+        $this->extend('updateDefaultFrom', $defaultFrom);
+        return $defaultFrom;
     }
 
     /**
@@ -299,9 +331,9 @@ class Email extends ViewableData
     private function sanitiseAddress($address)
     {
         if (is_array($address)) {
-            return array_map('trim', $address);
+            return array_map('trim', $address ?? []);
         }
-        return trim($address);
+        return trim($address ?? '');
     }
 
     /**
@@ -727,8 +759,8 @@ class Email extends ViewableData
      */
     public function setHTMLTemplate($template)
     {
-        if (substr($template, -3) == '.ss') {
-            $template = substr($template, 0, -3);
+        if (substr($template ?? '', -3) == '.ss') {
+            $template = substr($template ?? '', 0, -3);
         }
         $this->HTMLTemplate = $template;
 
@@ -753,8 +785,8 @@ class Email extends ViewableData
      */
     public function setPlainTemplate($template)
     {
-        if (substr($template, -3) == '.ss') {
-            $template = substr($template, 0, -3);
+        if (substr($template ?? '', -3) == '.ss') {
+            $template = substr($template ?? '', 0, -3);
         }
         $this->plainTemplate = $template;
 

@@ -26,7 +26,7 @@ use SilverStripe\View\SSViewer;
  *
  * @see GridField
  */
-class GridFieldFilterHeader implements GridField_URLHandler, GridField_HTMLProvider, GridField_DataManipulator, GridField_ActionProvider, GridField_StateProvider
+class GridFieldFilterHeader extends AbstractGridFieldComponent implements GridField_URLHandler, GridField_HTMLProvider, GridField_DataManipulator, GridField_ActionProvider, GridField_StateProvider
 {
     /**
      * See {@link setThrowExceptionOnBadDataType()}
@@ -284,7 +284,7 @@ class GridFieldFilterHeader implements GridField_URLHandler, GridField_HTMLProvi
 
         $context = $this->getSearchContext($gridField);
         $params = $gridField->getRequest()->postVar('filter') ?: [];
-        if (array_key_exists($gridField->getName(), $params)) {
+        if (array_key_exists($gridField->getName(), $params ?? [])) {
             $params = $params[$gridField->getName()];
         }
         if ($context->getSearchParams()) {
@@ -302,7 +302,7 @@ class GridFieldFilterHeader implements GridField_URLHandler, GridField_HTMLProvi
         if (!$this->useLegacyFilterHeader && !empty($filters)) {
             $filters = array_combine(array_map(function ($key) {
                 return 'Search__' . $key;
-            }, array_keys($filters)), $filters);
+            }, array_keys($filters ?? [])), $filters ?? []);
         }
 
         $searchAction = GridField_FormAction::create($gridField, 'filter', false, 'filter', null);
@@ -352,7 +352,7 @@ class GridFieldFilterHeader implements GridField_URLHandler, GridField_HTMLProvi
         foreach ($columns as $columnField) {
             $metadata = $gridField->getColumnMetadata($columnField);
             // Get the field name, without any modifications
-            $name = explode('.', $columnField);
+            $name = explode('.', $columnField ?? '');
             $title = $metadata['title'];
             $field = $searchFields->fieldByName($name[0]);
 
@@ -362,7 +362,7 @@ class GridFieldFilterHeader implements GridField_URLHandler, GridField_HTMLProvi
         }
 
         foreach ($searchFields->getIterator() as $field) {
-            $field->addExtraClass('stacked');
+            $field->addExtraClass('stacked no-change-track');
         }
 
         $name = $gridField->Title ?: singleton($gridField->getModelClass())->i18n_plural_name();
@@ -465,7 +465,7 @@ class GridFieldFilterHeader implements GridField_URLHandler, GridField_HTMLProvi
                 );
             }
 
-            if ($currentColumn == count($columns)) {
+            if ($currentColumn == count($columns ?? [])) {
                 $fields->push(
                     GridField_FormAction::create($gridField, 'filter', false, 'filter', null)
                         ->addExtraClass('btn font-icon-search btn--no-text btn--icon-large grid-field__filter-submit ss-gridfield-button-filter')

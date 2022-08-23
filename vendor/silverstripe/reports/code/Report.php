@@ -25,6 +25,7 @@ use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\CMSPreviewable;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DataQuery;
+use SilverStripe\ORM\Limitable;
 use SilverStripe\ORM\SS_List;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
@@ -104,6 +105,14 @@ class Report extends ViewableData
         ReportWrapper::class,
         SideReportWrapper::class,
     ];
+
+    /**
+     * The maximum number of items to include in the count in the reports overview
+     *
+     * @config
+     * @var int|null
+     */
+    private static $limit_count_in_overview = 10000;
 
     /**
      * Return the title of this report.
@@ -209,23 +218,51 @@ class Report extends ViewableData
      */
     protected function sanitiseClassName($class)
     {
-        return str_replace('\\', '-', $class);
+        return str_replace('\\', '-', $class ?? '');
     }
 
 
     /**
      * counts the number of objects returned
      * @param array $params - any parameters for the sourceRecords
+     * @param int|null $limit - the maximum number of records to count
      * @return int
      */
-    public function getCount($params = array())
+    public function getCount($params = array(), $limit = null)
     {
-        $sourceRecords = $this->sourceRecords($params, null, null);
+        $sourceRecords = $this->sourceRecords($params, null, $limit);
         if (!$sourceRecords instanceof SS_List) {
             user_error(static::class . "::sourceRecords does not return an SS_List", E_USER_NOTICE);
             return "-1";
         }
+        // Some reports may not use the $limit parameter in sourceRecords since it isn't actually
+        // used anywhere else - so make sure we limit record counts if possible.
+        if ($sourceRecords instanceof Limitable) {
+            $sourceRecords = $sourceRecords->limit($limit);
+        }
         return $sourceRecords->count();
+    }
+
+    /**
+     * Counts the number of objects returned up to a configurable limit.
+     *
+     * Large datasets can cause performance issues for some reports if allowed to count all records.
+     * To mitigate this, you can set the limit_count_in_overview config variable to the maximum number
+     * of items you wish to count to. Counts will be limited to this value, and any counts that hit
+     * this limit will be displayed with a plus, e.g. "500+"
+     *
+     * The default is to have no limit.
+     *
+     * @return string
+     */
+    public function getCountForOverview(): string
+    {
+        $limit = $this->config()->get('limit_count_in_overview');
+        $count = $this->getCount([], $limit);
+        if ($limit && $count == $limit) {
+            $count = "$count+";
+        }
+        return "$count";
     }
 
     /**
@@ -249,12 +286,12 @@ class Report extends ViewableData
         $reports = ClassInfo::subclassesFor(get_called_class());
 
         $reportsArray = [];
-        if ($reports && count($reports) > 0) {
+        if ($reports && count($reports ?? []) > 0) {
             $excludedReports = static::get_excluded_reports();
             // Collect reports into array with an attribute for 'sort'
             foreach ($reports as $report) {
                 // Don't use the Report superclass, or any excluded report classes
-                if (in_array($report, $excludedReports)) {
+                if (in_array($report, $excludedReports ?? [])) {
                     continue;
                 }
                 $reflectionClass = new ReflectionClass($report);
@@ -352,12 +389,12 @@ class Report extends ViewableData
         $items = $this->sourceRecords($params, null, null);
 
         $gridFieldConfig = GridFieldConfig::create()->addComponents(
-            new GridFieldButtonRow('before'),
-            new GridFieldPrintButton('buttons-before-left'),
-            new GridFieldExportButton('buttons-before-left'),
-            new GridFieldSortableHeader(),
-            new GridFieldDataColumns(),
-            new GridFieldPaginator()
+            GridFieldButtonRow::create('before'),
+            GridFieldPrintButton::create('buttons-before-left'),
+            GridFieldExportButton::create('buttons-before-left'),
+            GridFieldSortableHeader::create(),
+            GridFieldDataColumns::create(),
+            GridFieldPaginator::create()
         );
         /** @var GridField $gridField */
         $gridField = GridField::create('Report', null, $items, $gridFieldConfig);
@@ -447,7 +484,7 @@ class Report extends ViewableData
         $results = $this->extend($methodName, $member);
         if ($results && is_array($results)) {
             // Remove NULLs
-            $results = array_filter($results, function ($v) {
+            $results = array_filter($results ?? [], function ($v) {
                 return !is_null($v);
             });
             // If there are any non-NULL responses, then return the lowest one of them.

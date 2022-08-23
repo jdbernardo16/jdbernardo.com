@@ -48,7 +48,8 @@ class TestMailer implements Mailer
             'From' => implode(';', array_keys($email->getFrom() ?: [])),
             'Subject' => $email->getSubject(),
             'Content' => $email->getBody(),
-            'AttachedFiles' => $attachedFiles
+            'AttachedFiles' => $attachedFiles,
+            'Headers' => $email->getSwiftMessage()->getHeaders(),
         ];
         if ($plainContent) {
             $serialised['PlainContent'] = $plainContent;
@@ -103,17 +104,18 @@ class TestMailer implements Mailer
         foreach ($this->emailsSent as $email) {
             $matched = true;
 
-            foreach (['To', 'From', 'Subject', 'Content'] as $field) {
+            // Loop all our Email fields
+            foreach ($compare as $field => $value) {
                 $emailValue = $email[$field];
-                if ($value = $compare[$field]) {
-                    if ($field == 'To') {
+                if ($value) {
+                    if (in_array($field, ['To', 'From'])) {
                         $emailValue = $this->normaliseSpaces($emailValue);
                         $value = $this->normaliseSpaces($value);
                     }
-                    if ($value[0] == '/') {
-                        $matched = preg_match($value, $emailValue);
+                    if ($value[0] === '/') {
+                        $matched = preg_match($value ?? '', $emailValue ?? '');
                     } else {
-                        $matched = ($value == $emailValue);
+                        $matched = ($value === $emailValue);
                     }
                     if (!$matched) {
                         break;
@@ -133,6 +135,6 @@ class TestMailer implements Mailer
      */
     private function normaliseSpaces(string $value)
     {
-        return str_replace([', ', '; '], [',', ';'], $value);
+        return str_replace([', ', '; '], [',', ';'], $value ?? '');
     }
 }

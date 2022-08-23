@@ -335,7 +335,7 @@ class Versioned extends DataExtension implements TemplateGlobalProvider, Resetta
             $mode = static::VERSIONED;
         } elseif (is_array($mode) || func_num_args() > 1) {
             Deprecation::notice("5.0", "Versioned now takes a mode as a single parameter");
-            $mode = func_num_args() > 1 || count($mode) > 1
+            $mode = func_num_args() > 1 || count($mode ?? []) > 1
                 ? static::STAGEDVERSIONED
                 : static::VERSIONED;
         }
@@ -645,19 +645,22 @@ class Versioned extends DataExtension implements TemplateGlobalProvider, Resetta
 
         // Determine the base table of the existing query
         $baseFrom = $baseQuery->getFrom();
-        $baseTable = trim(reset($baseFrom), '"');
+        $baseTable = trim(reset($baseFrom) ?? '', '"');
 
         // And then the name of the base table in the new query
         $newFrom = $subSelect->getFrom();
-        $newTable = trim(key($newFrom), '"');
+        $newTable = trim(key($newFrom ?? []) ?? '', '"');
 
         // Parse "where" conditions to find those appropriate to be "promoted" into an inner join
         // We can ONLY promote a filter on the primary key of the base table. Any other conditions will make the
         // version returned incorrect, as we are filtering out version that may be the latest (and correct) version
         foreach ($baseQuery->getWhere() as $condition) {
-            $conditionClause = key($condition);
+            if (is_object($condition)) {
+                continue;
+            }
+            $conditionClause = key($condition ?? []);
             // Pull out the table and field for this condition. We'll skip anything we can't parse
-            if (preg_match('/^"([^"]+)"\."([^"]+)"/', $conditionClause, $matches) !== 1) {
+            if (preg_match('/^"([^"]+)"\."([^"]+)"/', $conditionClause ?? '', $matches) !== 1) {
                 continue;
             }
 
@@ -672,7 +675,7 @@ class Versioned extends DataExtension implements TemplateGlobalProvider, Resetta
             $conditionClause = preg_replace(
                 '/^"([^"]+)"\./',
                 "\"{$newTable}\".",
-                $conditionClause
+                $conditionClause ?? ''
             );
 
             $subSelect->addWhere([$conditionClause => reset($condition)]);
@@ -898,7 +901,7 @@ SQL
 
         // Check that this class belongs to the same tree
         $baseClass = $schema->baseDataClass($this->owner);
-        if (!is_a($tableClass, $baseClass, true)) {
+        if (!is_a($tableClass, $baseClass ?? '', true)) {
             return false;
         }
 
@@ -928,7 +931,7 @@ SQL
         $versionedMode = $dataObject->getSourceQueryParam('Versioned.mode');
         $modesToAllowVersioning = ['all_versions', 'latest_versions', 'archive', 'version'];
         if (!empty($dataObject->Version) &&
-            (!empty($versionedMode) && in_array($versionedMode, $modesToAllowVersioning))
+            (!empty($versionedMode) && in_array($versionedMode, $modesToAllowVersioning ?? []))
         ) {
             // This will ensure that augmentSQL will select only the same version as the owner,
             // regardless of how this object was initially selected
@@ -953,7 +956,7 @@ SQL
         // Build a list of suffixes whose tables need versioning
         $allSuffixes = [];
         $versionableExtensions = (array)$owner->config()->get('versionableExtensions');
-        if (count($versionableExtensions)) {
+        if (count($versionableExtensions ?? [])) {
             foreach ($versionableExtensions as $versionableExtension => $suffixes) {
                 if ($owner->hasExtension($versionableExtension)) {
                     foreach ((array)$suffixes as $suffix) {
@@ -1075,14 +1078,14 @@ SQL
         }
 
         // Skip if tables are the same (ignore case)
-        if (strcasecmp($childTable, $baseTable) === 0) {
+        if (strcasecmp($childTable ?? '', $baseTable ?? '') === 0) {
             return;
         }
 
         // Skip if child table doesn't exist
         // If it does, ensure query case matches found case
         $tables = DB::get_schema()->tableList();
-        if (!array_key_exists(strtolower($childTable), $tables)) {
+        if (!array_key_exists(strtolower($childTable ?? ''), $tables ?? [])) {
             return;
         }
         $childTable = $tables[strtolower($childTable)];
@@ -1094,7 +1097,7 @@ SQL
 
         // If we have a parent table limit orphaned records
         // to only those that exist in this
-        if (array_key_exists(strtolower($baseTable), $tables)) {
+        if (array_key_exists(strtolower($baseTable ?? ''), $tables ?? [])) {
             // Ensure we match db table case
             $baseTable = $tables[strtolower($baseTable)];
             $orphanedQuery
@@ -1160,11 +1163,11 @@ SQL
         if ($data) {
             $fields = $schema->databaseFields($class, false);
             if (is_array($fields)) {
-                $data = array_intersect_key($data, $fields);
+                $data = array_intersect_key($data ?? [], $fields);
 
                 foreach ($data as $k => $v) {
                     // If the value is not set at all in the manipulation currently, use the existing value from the database
-                    if (!array_key_exists($k, $newManipulation['fields'])) {
+                    if (!array_key_exists($k, $newManipulation['fields'] ?? [])) {
                         $newManipulation['fields'][$k] = $v;
                     }
                 }
@@ -1298,7 +1301,7 @@ SQL
 
         // Update all tables
         $thisVersion = null;
-        $tables = array_keys($manipulation);
+        $tables = array_keys($manipulation ?? []);
         foreach ($tables as $table) {
             // Make sure that the augmented write is being applied to a table that can be versioned
             $class = isset($manipulation[$table]['class']) ? $manipulation[$table]['class'] : null;
@@ -1352,7 +1355,7 @@ SQL
         // Add the new version # back into the data object, for accessing
         // after this write
         if ($thisVersion !== null) {
-            $owner->Version = str_replace("'", "", $thisVersion);
+            $owner->Version = str_replace("'", "", $thisVersion ?? '');
         }
     }
 
@@ -1688,7 +1691,7 @@ SQL
 
         // If we weren't definitely loaded from live, and we can't view non-live content, we need to
         // check to make sure this version is the live version and so can be viewed
-        $latestVersion = Versioned::get_versionnumber_by_stage(get_class($owner), static::LIVE, $owner->ID);
+        $latestVersion = Versioned::get_versionnumber_by_stage($this->owner->baseClass(), static::LIVE, $owner->ID);
         if ($latestVersion == $owner->Version) {
             // Even if this is loaded from a non-live stage, this is the live version
             return true;
@@ -1730,7 +1733,8 @@ SQL
             Versioned::set_stage($stage);
 
             $owner = $this->owner;
-            $versionFromStage = DataObject::get(get_class($owner))->byID($owner->ID);
+            $baseClass = DataObject::getSchema()->baseDataClass($owner);
+            $versionFromStage = DataObject::get($baseClass)->byID($owner->ID);
 
             return $versionFromStage ? $versionFromStage->canView($member) : false;
         });
@@ -1774,7 +1778,7 @@ SQL
         $owner = $this->owner;
         $versionableExtensions = (array)$owner->config()->get('versionableExtensions');
 
-        if (count($versionableExtensions)) {
+        if (count($versionableExtensions ?? [])) {
             foreach ($versionableExtensions as $versionableExtension => $suffixes) {
                 if ($owner->hasExtension($versionableExtension)) {
                     /** @var VersionableExtension|Extension $ext */
@@ -1936,8 +1940,10 @@ SQL
             return false;
         }
         // Count live owners
+        $baseClass = $this->owner->baseClass();
+
         /** @var Versioned|RecursivePublishable|DataObject $liveRecord */
-        $liveRecord = static::get_by_stage(get_class($this->owner), Versioned::LIVE)->byID($this->owner->ID);
+        $liveRecord = static::get_by_stage($baseClass, Versioned::LIVE)->byID($this->owner->ID);
         return $liveRecord->findOwners(false)->count() > 0;
     }
 
@@ -2083,7 +2089,7 @@ SQL
     public function VersionsList()
     {
         $id = $this->owner->ID ?: $this->owner->OldID;
-        $class = get_class($this->owner);
+        $class = DataObject::getSchema()->baseDataClass($this->owner);
         return Versioned::get_all_versions($class, $id);
     }
 
@@ -2100,11 +2106,18 @@ SQL
      */
     public function allVersions($filter = "", $sort = "", $limit = "", $join = "", $having = "")
     {
+        /** @var DataObject $owner */
+        $owner = $this->owner;
+
+        // When an object is not yet in the Database, we can't get its versions
+        if (!$owner->isInDB()) {
+            return ArrayList::create();
+        }
+
         // Make sure the table names are not postfixed (e.g. _Live)
         $oldMode = static::get_reading_mode();
         static::set_stage(static::DRAFT);
 
-        $owner = $this->owner;
         $list = DataObject::get(DataObject::getSchema()->baseDataClass($owner), $filter, $sort, $join, $limit);
         if ($having) {
             // @todo - This method doesn't exist on DataList
@@ -2116,8 +2129,8 @@ SQL
         $baseTable = null;
         foreach ($query->getFrom() as $table => $tableJoin) {
             if (is_string($tableJoin) && $tableJoin[0] == '"') {
-                $baseTable = str_replace('"', '', $tableJoin);
-            } elseif (is_string($tableJoin) && substr($tableJoin, 0, 5) != 'INNER') {
+                $baseTable = str_replace('"', '', $tableJoin ?? '');
+            } elseif (is_string($tableJoin) && substr($tableJoin ?? '', 0, 5) != 'INNER') {
                 $query->setFrom([
                     $table => "LEFT JOIN \"$table\" ON \"$table\".\"RecordID\"=\"{$baseTable}_Versions\".\"RecordID\""
                         . " AND \"$table\".\"Version\" = \"{$baseTable}_Versions\".\"Version\""
@@ -2159,8 +2172,10 @@ SQL
     public function compareVersions($from, $to)
     {
         $owner = $this->owner;
-        $fromRecord = Versioned::get_version(get_class($owner), $owner->ID, $from);
-        $toRecord = Versioned::get_version(get_class($owner), $owner->ID, $to);
+        $baseClass = $this->owner->baseClass();
+
+        $fromRecord = Versioned::get_version($baseClass, $owner->ID, $from);
+        $toRecord = Versioned::get_version($baseClass, $owner->ID, $to);
 
         $diff = new DataDifferencer($fromRecord, $toRecord);
 
@@ -2319,7 +2334,7 @@ SQL
      */
     public static function get_stage()
     {
-        $parts = explode('.', Versioned::get_reading_mode());
+        $parts = explode('.', Versioned::get_reading_mode() ?? '');
 
         if ($parts[0] == 'Stage') {
             return $parts[1];
@@ -2334,7 +2349,7 @@ SQL
      */
     public static function current_archived_date()
     {
-        $parts = explode('.', Versioned::get_reading_mode());
+        $parts = explode('.', Versioned::get_reading_mode() ?? '');
         if ($parts[0] == 'Archive') {
             return $parts[1];
         }
@@ -2348,8 +2363,8 @@ SQL
      */
     public static function current_archived_stage()
     {
-        $parts = explode('.', Versioned::get_reading_mode());
-        if (sizeof($parts) === 3 && $parts[0] == 'Archive') {
+        $parts = explode('.', Versioned::get_reading_mode() ?? '');
+        if (sizeof($parts ?? []) === 3 && $parts[0] == 'Archive') {
             return $parts[2];
         }
         return static::DRAFT;
@@ -2780,7 +2795,7 @@ SQL
         }
 
         /** @var Versioned|DataObject $version */
-        $version = static::get_latest_version(get_class($owner), $owner->ID);
+        $version = static::get_latest_version($this->owner->baseClass(), $owner->ID);
         return ($version->Version == $owner->Version);
     }
 

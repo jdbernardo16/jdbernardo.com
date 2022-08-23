@@ -15,31 +15,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 trait RecipeCommandBehaviour
 {
     /**
-     * Gets the application instance for this command.
-     *
-     * @return Application An Application instance
-     */
-    public abstract function getApplication();
-
-    /**
-     * @param  bool              $required
-     * @param  bool|null         $disablePlugins
-     * @throws \RuntimeException
-     * @return Composer
-     */
-    public abstract function getComposer($required = true, $disablePlugins = null);
-
-    /**
-     * Removes the cached composer instance
-     */
-    public abstract function resetComposer();
-
-    /**
-     * @return IOInterface
-     */
-    abstract public function getIO();
-
-    /**
      * @param OutputInterface $output
      * @param string $recipe
      * @param string $constraint
@@ -128,17 +103,17 @@ trait RecipeCommandBehaviour
         }
 
         // Existing version is already a ^1.0.0 or ~1.0.0 constraint
-        if (preg_match('#^[~^]#', $existingVersion)) {
+        if (preg_match('#^[~^]#', $existingVersion ?? '')) {
             return $existingVersion;
         }
 
         // Existing version is already a dev constraint
-        if (stristr($existingVersion, 'dev') !== false) {
+        if (stristr($existingVersion ?? '', 'dev') !== false) {
             return $existingVersion;
         }
 
         // Numeric-only version maps to semver constraint
-        if (preg_match('#^([\d.]+)$#', $existingVersion)) {
+        if (preg_match('#^([\d.]+)$#', $existingVersion ?? '')) {
             return "^{$existingVersion}";
         }
 

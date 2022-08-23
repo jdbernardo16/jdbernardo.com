@@ -16,13 +16,13 @@ use SilverStripe\ORM\ValidationException;
  * Use the {@link $removeRelation} property set in the constructor.
  *
  * <code>
- * $action = new GridFieldDeleteAction(); // delete objects permanently
+ * $action = GridFieldDeleteAction::create(); // delete objects permanently
  *
  * // removes the relation to object instead of deleting
- * $action = new GridFieldDeleteAction(true);
+ * $action = GridFieldDeleteAction::create(true);
  * </code>
  */
-class GridFieldDeleteAction implements GridField_ColumnProvider, GridField_ActionProvider, GridField_ActionMenuItem
+class GridFieldDeleteAction extends AbstractGridFieldComponent implements GridField_ColumnProvider, GridField_ActionProvider, GridField_ActionMenuItem
 {
 
     /**
@@ -96,7 +96,7 @@ class GridFieldDeleteAction implements GridField_ColumnProvider, GridField_Actio
      */
     public function augmentColumns($gridField, &$columns)
     {
-        if (!in_array('Actions', $columns)) {
+        if (!in_array('Actions', $columns ?? [])) {
             $columns[] = 'Actions';
         }
     }

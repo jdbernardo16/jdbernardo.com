@@ -272,7 +272,7 @@ trait FileUploadReceiver
             $id = $idList ? reset($idList) : 0;
             $record->{"{$fieldname}ID"} = $id;
 
-            // Polymorphic asignment
+            // Polymorphic assignment
             if ($class === DataObject::class) {
                 $file = $id ? File::get()->byID($id) : null;
                 $fileClass = $file ? get_class($file) : File::class;
@@ -403,7 +403,7 @@ trait FileUploadReceiver
             && is_array($postVars['tmp_name'])
             && !empty($postVars['tmp_name']['Uploads'])
         ) {
-            for ($i = 0; $i < count($postVars['tmp_name']['Uploads']); $i++) {
+            for ($i = 0; $i < count($postVars['tmp_name']['Uploads'] ?? []); $i++) {
                 // Skip if "empty" file
                 if (empty($postVars['tmp_name']['Uploads'][$i])) {
                     continue;

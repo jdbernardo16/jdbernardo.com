@@ -7,6 +7,7 @@ use SilverStripe\Dev\Deprecation;
 use PDO;
 use PDOStatement;
 use InvalidArgumentException;
+use PDOException;
 
 /**
  * PDO driver database connector
@@ -109,16 +110,21 @@ class PDOConnector extends DBConnector implements TransactionManager
         }
 
         // Generate new statement
-        $statement = $this->pdoConnection->prepare(
-            $sql,
-            [PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY]
-        );
+        try {
+            $statement = $this->pdoConnection->prepare(
+                $sql,
+                [PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY]
+            );
+        } catch (PDOException $e) {
+            $statement = false;
+            $this->databaseError($e->getMessage(), E_USER_ERROR, $sql);
+        }
 
         // Wrap in a PDOStatementHandle, to cache column metadata
         $statementHandle = ($statement === false) ? false : new PDOStatementHandle($statement);
 
         // Only cache select statements
-        if (preg_match('/^(\s*)select\b/i', $sql)) {
+        if (preg_match('/^(\s*)select\b/i', $sql ?? '')) {
             $this->cachedStatements[$sql] = $statementHandle;
         }
         return $statementHandle;
@@ -212,17 +218,17 @@ class PDOConnector extends DBConnector implements TransactionManager
         }
 
         // Set SSL options if they are defined
-        if (array_key_exists('ssl_key', $parameters) &&
-            array_key_exists('ssl_cert', $parameters)
+        if (array_key_exists('ssl_key', $parameters ?? []) &&
+            array_key_exists('ssl_cert', $parameters ?? [])
         ) {
             $options[PDO::MYSQL_ATTR_SSL_KEY] = $parameters['ssl_key'];
             $options[PDO::MYSQL_ATTR_SSL_CERT] = $parameters['ssl_cert'];
-            if (array_key_exists('ssl_ca', $parameters)) {
+            if (array_key_exists('ssl_ca', $parameters ?? [])) {
                 $options[PDO::MYSQL_ATTR_SSL_CA] = $parameters['ssl_ca'];
             }
             // use default cipher if not provided
             $options[PDO::MYSQL_ATTR_SSL_CIPHER] =
-                array_key_exists('ssl_cipher', $parameters) ?
+                array_key_exists('ssl_cipher', $parameters ?? []) ?
                 $parameters['ssl_cipher'] :
                 self::config()->get('ssl_cipher_default');
         }
@@ -278,7 +284,7 @@ class PDOConnector extends DBConnector implements TransactionManager
 
         // Since the PDO library quotes the value, we should remove this to maintain
         // consistency with MySQLDatabase::escapeString
-        if (preg_match('/^\'(?<value>.*)\'$/', $value, $matches)) {
+        if (preg_match('/^\'(?<value>.*)\'$/', $value ?? '', $matches)) {
             $value = $matches['value'];
         }
         return $value;
@@ -286,7 +292,7 @@ class PDOConnector extends DBConnector implements TransactionManager
 
     public function quoteString($value)
     {
-        return $this->pdoConnection->quote($value);
+        return $this->pdoConnection->quote($value ?? '');
     }
 
     /**
@@ -383,7 +389,7 @@ class PDOConnector extends DBConnector implements TransactionManager
     public function bindParameters(PDOStatement $statement, $parameters)
     {
         // Bind all parameters
-        $parameterCount = count($parameters);
+        $parameterCount = count($parameters ?? []);
         for ($index = 0; $index < $parameterCount; $index++) {
             $value = $parameters[$index];
             $phpType = gettype($value);
@@ -557,8 +563,13 @@ class PDOConnector extends DBConnector implements TransactionManager
             }
         }
 
+        // Note: $this->inTransaction may not match the 'in-transaction' state in PDO
         $this->inTransaction = false;
-        return $this->pdoConnection->rollBack();
+        if ($this->pdoConnection->inTransaction()) {
+            return $this->pdoConnection->rollBack();
+        }
+        // return false because it did not rollback.
+        return false;
     }
 
     public function transactionDepth()

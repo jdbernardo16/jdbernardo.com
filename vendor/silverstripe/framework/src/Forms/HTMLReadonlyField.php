@@ -5,7 +5,7 @@ namespace SilverStripe\Forms;
 /**
  * Readonly field equivalent for literal HTML
  *
- * Unlike HTMLEditorField_Readonly, does not processs shortcodes
+ * Unlike HTMLEditorField_Readonly, does not process shortcodes
  */
 class HTMLReadonlyField extends ReadonlyField
 {
@@ -34,6 +34,6 @@ class HTMLReadonlyField extends ReadonlyField
      */
     public function ValueEntities()
     {
-        return htmlentities($this->Value(), ENT_COMPAT, 'UTF-8');
+        return htmlentities($this->Value() ?? '', ENT_COMPAT, 'UTF-8');
     }
 }

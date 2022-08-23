@@ -48,7 +48,7 @@
     }
   },
   "devDependencies": {
-    "@silverstripe/eslint-config": "0.0.5",
+    "@silverstripe/eslint-config": "^0.1.0",
     "@silverstripe/webpack-config": "^1.7.0",
     "@storybook/addon-actions": "^3.4.11",
     "@storybook/addons": "^3.4.11",
@@ -66,8 +66,9 @@
     "babel-runtime": "6.26.0",
     "bootstrap": "^4.3.1",
     "classnames": "^2.2.5",
+    "crypto-js": "^4.1.1",
     "deep-freeze-strict": "^1.1.1",
-    "dropzone": "^5.5.1",
+    "dropzone": "5.7.2",
     "graphql": "^0.13.2",
     "graphql-fragments": "^0.1.0",
     "graphql-tag": "^2.8.0",
@@ -93,6 +94,9 @@
     "redux-thunk": "^1.0.3",
     "url": "^0.11.0",
     "webpack-sources": "^1.1.0"
+  },
+  "resolutions": {
+    "colors": "1.1.2"
   },
   "babel": {
     "presets": [

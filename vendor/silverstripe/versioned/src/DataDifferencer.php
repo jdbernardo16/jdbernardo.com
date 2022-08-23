@@ -19,7 +19,7 @@ use SilverStripe\View\ViewableData;
  * <code>
  * $fromRecord = Versioned::get_version('SiteTree', $pageID, $fromVersion);
  * $toRecord = Versioned::get_version('SiteTree, $pageID, $toVersion);
- * $diff = new DataDifferencer($fromRecord, $toRecord);
+ * $diff = DataDifferencer::create($fromRecord, $toRecord);
  * </code>
  *
  * And then it can be used in a number of ways.  You can use the ChangedFields() method in a template:
@@ -92,17 +92,17 @@ class DataDifferencer extends ViewableData
             $fields = array_keys($diffed->toMap() + $this->toRecord->toMap());
         } else {
             $diffed = clone $this->toRecord;
-            $fields = array_keys($this->toRecord->toMap());
+            $fields = array_keys($this->toRecord->toMap() ?? []);
         }
 
         $hasOnes = array_merge($this->fromRecord->hasOne(), $this->toRecord->hasOne());
 
         // Loop through properties
         foreach ($fields as $field) {
-            if (in_array($field, $this->ignoredFields)) {
+            if (in_array($field, $this->ignoredFields ?? [])) {
                 continue;
             }
-            if (in_array($field, array_keys($hasOnes))) {
+            if (in_array($field, array_keys($hasOnes ?? []))) {
                 continue;
             }
 
@@ -134,7 +134,7 @@ class DataDifferencer extends ViewableData
 
         // Loop through has_one
         foreach ($hasOnes as $relName => $relSpec) {
-            if (in_array($relName, $this->ignoredFields)) {
+            if (in_array($relName, $this->ignoredFields ?? [])) {
                 continue;
             }
 
@@ -208,45 +208,32 @@ class DataDifferencer extends ViewableData
      */
     public function ChangedFields()
     {
-        $changedFields = new ArrayList();
+        $base = $this->fromRecord ?: $this->toRecord;
+        $changedFields = ArrayList::create();
 
-        if ($this->fromRecord) {
-            $base = $this->fromRecord;
-            $fields = array_keys($this->fromRecord->toMap());
-        } else {
-            $base = $this->toRecord;
-            $fields = array_keys($this->toRecord->toMap());
-        }
-
-        foreach ($fields as $field) {
-            if (in_array($field, $this->ignoredFields)) {
-                continue;
-            }
-
-            if (!$this->fromRecord || $this->fromRecord->$field != $this->toRecord->$field) {
-                // Only show HTML diffs for fields which allow HTML values in the first place
-                $fieldObj = $this->toRecord->dbObject($field);
-                if ($this->fromRecord) {
-                    $fieldDiff = Diff::compareHTML(
-                        $this->fromRecord->$field,
-                        $this->toRecord->$field,
-                        (!$fieldObj || $fieldObj->config()->get('escape_type') != 'xml')
-                    );
+        foreach ($this->changedFieldNames() as $field) {
+            // Only show HTML diffs for fields which allow HTML values in the first place
+            $fieldObj = $this->toRecord->dbObject($field);
+            if ($this->fromRecord) {
+                $fieldDiff = Diff::compareHTML(
+                    $this->fromRecord->$field,
+                    $this->toRecord->$field,
+                    (!$fieldObj || $fieldObj->config()->get('escape_type') != 'xml')
+                );
+            } else {
+                if ($fieldObj && $fieldObj->config()->get('escape_type') == 'xml') {
+                    $fieldDiff = "<ins>" . $this->toRecord->$field . "</ins>";
                 } else {
-                    if ($fieldObj && $fieldObj->config()->get('escape_type') == 'xml') {
-                        $fieldDiff = "<ins>" . $this->toRecord->$field . "</ins>";
-                    } else {
-                        $fieldDiff = "<ins>" . Convert::raw2xml($this->toRecord->$field) . "</ins>";
-                    }
+                    $fieldDiff = "<ins>" . Convert::raw2xml($this->toRecord->$field) . "</ins>";
                 }
-                $changedFields->push(new ArrayData([
-                    'Name' => $field,
-                    'Title' => $base->fieldLabel($field),
-                    'Diff' => $fieldDiff,
-                    'From' => $this->fromRecord ? $this->fromRecord->$field : null,
-                    'To' => $this->toRecord ? $this->toRecord->$field : null,
-                ]));
             }
+            $changedFields->push(ArrayData::create([
+                'Name' => $field,
+                'Title' => $base->fieldLabel($field),
+                'Diff' => $fieldDiff,
+                'From' => $this->fromRecord ? $this->fromRecord->$field : null,
+                'To' => $this->toRecord ? $this->toRecord->$field : null,
+            ]));
         }
 
         return $changedFields;
@@ -258,16 +245,15 @@ class DataDifferencer extends ViewableData
      */
     public function changedFieldNames()
     {
-        $diffed = clone $this->fromRecord;
-        $fields = array_keys($diffed->toMap());
+        $base = $this->fromRecord ?: $this->toRecord;
+        $fields = array_keys($base->toMap() ?? []);
 
         $changedFields = [];
-
         foreach ($fields as $field) {
-            if (in_array($field, $this->ignoredFields)) {
+            if (in_array($field, $this->ignoredFields ?? [])) {
                 continue;
             }
-            if ($this->fromRecord->$field != $this->toRecord->$field) {
+            if (!$this->fromRecord || $this->fromRecord->$field != $this->toRecord->$field) {
                 $changedFields[] = $field;
             }
         }

@@ -291,7 +291,7 @@ class ManyManyList extends RelationList
                 // that DataObject::prepareManipulationTable writes fields
                 foreach ($this->extraFields as $fieldName => $fieldSpec) {
                     // Skip fields without an assignment
-                    if (array_key_exists($fieldName, $extraFields)) {
+                    if (array_key_exists($fieldName, $extraFields ?? [])) {
                         $fieldObject = Injector::inst()->create($fieldSpec, $fieldName);
                         $fieldObject->setValue($extraFields[$fieldName]);
                         $fieldObject->writeToManipulation($manipulation[$this->joinTable]);
@@ -389,7 +389,6 @@ class ManyManyList extends RelationList
      */
     public function removeAll()
     {
-
         // Remove the join to the join table to avoid MySQL row locking issues.
         $query = $this->dataQuery();
         $foreignFilter = $query->getQueryParam('Foreign.Filter');
@@ -404,6 +403,7 @@ class ManyManyList extends RelationList
         unset($from[$this->joinTable]);
         $selectQuery->setFrom($from);
         $selectQuery->setOrderBy(); // ORDER BY in subselects breaks MS SQL Server and is not necessary here
+        $selectQuery->setLimit(null); // LIMIT in subselects breaks MariaDB (https://mariadb.com/kb/en/subquery-limitations/#limit) and is not necessary here
         $selectQuery->setDistinct(false);
 
         // Use a sub-query as SQLite does not support setting delete targets in

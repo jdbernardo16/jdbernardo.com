@@ -6,12 +6,13 @@ use League\Csv\Writer;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DataObject;
 
 /**
  * Adds an "Export list" button to the bottom of a {@link GridField}.
  */
-class GridFieldExportButton implements GridField_HTMLProvider, GridField_ActionProvider, GridField_URLHandler
+class GridFieldExportButton extends AbstractGridFieldComponent implements GridField_HTMLProvider, GridField_ActionProvider, GridField_URLHandler
 {
     /**
      * @var array Map of a property name on the exported objects, with values being the column title in the CSV file.
@@ -177,7 +178,7 @@ class GridFieldExportButton implements GridField_HTMLProvider, GridField_ActionP
             $csvWriter->addFormatter(function (array $row) {
                 foreach ($row as &$item) {
                     // [SS-2017-007] Sanitise XLS executable column values with a leading tab
-                    if (preg_match('/^[-@=+].*/', $item)) {
+                    if (preg_match('/^[-@=+].*/', $item ?? '')) {
                         $item = "\t" . $item;
                     }
                 }
@@ -191,7 +192,7 @@ class GridFieldExportButton implements GridField_HTMLProvider, GridField_ActionP
             // determine the CSV headers. If a field is callable (e.g. anonymous function) then use the
             // source name as the header instead
             foreach ($csvColumns as $columnSource => $columnHeader) {
-                if (is_array($columnHeader) && array_key_exists('title', $columnHeader)) {
+                if (is_array($columnHeader) && array_key_exists('title', $columnHeader ?? [])) {
                     $headers[] = $columnHeader['title'];
                 } else {
                     $headers[] = (!is_string($columnHeader) && is_callable($columnHeader)) ? $columnSource : $columnHeader;
@@ -220,8 +221,15 @@ class GridFieldExportButton implements GridField_HTMLProvider, GridField_ActionP
             ? $gridFieldColumnsComponent->getColumnsHandled($gridField)
             : [];
 
+        // Remove limit as the list may be paginated, we want the full list for the export
+        $items = $items->limit(null);
+        // Use Generator in applicable cases to reduce memory consumption
+        $items = $items instanceof DataList
+            ? $items->getGenerator()
+            : $items;
+
         /** @var DataObject $item */
-        foreach ($items->limit(null) as $item) {
+        foreach ($items as $item) {
             if (!$item->hasMethod('canView') || $item->canView()) {
                 $columnData = [];
 
@@ -234,9 +242,9 @@ class GridFieldExportButton implements GridField_HTMLProvider, GridField_ActionP
                         }
 
                         $value = $columnHeader($relObj);
-                    } elseif ($gridFieldColumnsComponent && array_key_exists($columnSource, $columnsHandled)) {
+                    } elseif ($gridFieldColumnsComponent && in_array($columnSource, $columnsHandled ?? [])) {
                         $value = strip_tags(
-                            $gridFieldColumnsComponent->getColumnContent($gridField, $item, $columnSource)
+                            $gridFieldColumnsComponent->getColumnContent($gridField, $item, $columnSource) ?? ''
                         );
                     } else {
                         $value = $gridField->getDataFieldValue($item, $columnSource);

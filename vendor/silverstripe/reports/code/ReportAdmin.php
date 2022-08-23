@@ -139,7 +139,7 @@ class ReportAdmin extends LeftAndMain implements PermissionProvider
      */
     protected function unsanitiseClassName($class)
     {
-        return str_replace('-', '\\', $class);
+        return str_replace('-', '\\', $class ?? '');
     }
 
     /**
@@ -155,7 +155,7 @@ class ReportAdmin extends LeftAndMain implements PermissionProvider
      */
     public static function has_reports()
     {
-        return sizeof(Report::get_reports()) > 0;
+        return sizeof(Report::get_reports() ?? []) > 0;
     }
 
     /**
@@ -230,11 +230,11 @@ class ReportAdmin extends LeftAndMain implements PermissionProvider
             // List all reports
             $fields = new FieldList();
             $gridFieldConfig = GridFieldConfig::create()->addComponents(
-                new GridFieldSortableHeader(),
-                new GridFieldDataColumns(),
-                new GridFieldFooter()
+                GridFieldSortableHeader::create(),
+                GridFieldDataColumns::create(),
+                GridFieldFooter::create()
             );
-            $gridField = new GridField('Reports', false, $this->Reports(), $gridFieldConfig);
+            $gridField = GridField::create('Reports', false, $this->Reports(), $gridFieldConfig);
             /** @var GridFieldDataColumns $columns */
             $columns = $gridField->getConfig()->getComponentByType('SilverStripe\\Forms\\GridField\\GridFieldDataColumns');
             $columns->setDisplayFields(array(
@@ -242,7 +242,7 @@ class ReportAdmin extends LeftAndMain implements PermissionProvider
             ));
 
             $columns->setFieldFormatting(array(
-                    'title' => '<a href=\"$Link\" class=\"grid-field__link-block\">$value ($Count)</a>'
+                    'title' => '<a href=\"$Link\" class=\"grid-field__link-block\">$value ($CountForOverview)</a>'
                 ));
             $gridField->addExtraClass('all-reports-gridfield');
             $fields->push($gridField);

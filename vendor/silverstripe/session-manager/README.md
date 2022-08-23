@@ -37,6 +37,14 @@ The `LoginSession` tracks the IP address and user agent making the requests
 in order to make different sessions easier to identify in the user interface.
 It does not use changes to this metadata to invalidate sessions.
 
+Logged in users have the ability to see their own active sessions across all devices
+and browsers where they have logged in, and can choose to log out any of those sessions.
+
+Administrators can revoke _all_ active sessions for _all_ users by triggering the `dev/tasks/InvalidateAllSessions`
+task either in the browser or via the CLI. Note that this will also revoke the session
+of the user activating the task, so if this is triggered via the browser, that user
+will need to log back in to perform further actions.
+
 ## Compatibility
 
 The module should work independently of the storage mechanism used for PHP sessions (file-based sticky sessions, file-based sessions on a shared filesystem, [silverstripe/dynamodb](https://github.com/silverstripe/silverstripe-dynamodb), [silverstripe/hybridsessions](https://github.com/silverstripe/silverstripe-hybridsessions)).
@@ -53,7 +61,7 @@ It is also compatible with the [Silverstripe MFA module suite](https://github.co
 
 ## Configuration
 
-### Logout across devices
+### Removing "remember me" tokens across devices on logout
 
 Session-manager provides an explicit way to terminate individual sessions and their attached "Keep me signed in" tokens. So this module sets `SilverStripe\Security\RememberLoginHash.logout_across_devices` to `false`.
 
@@ -68,6 +76,8 @@ After:
 SilverStripe\Security\RememberLoginHash:
   logout_across_devices: true
 ```
+
+Please note, this configuration only removes "remember me" tokens on logout, it does not terminate active sessions across devices on logout.
 
 Read [Saved User Logins](https://docs.silverstripe.org/en/4/developer_guides/security/member/#saved-user-logins) to learn how to configure the "Keep me signed in" feature for your members.
 

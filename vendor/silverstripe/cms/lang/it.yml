@@ -83,6 +83,7 @@ it:
     MENUTITLE: Storico
     MULTISELECT: 'Azioni di gruppo'
     NOTPUBLISHED: 'Non pubblicato'
+    PREVIEW: 'Anteprima sito'
     NO_PREVIEW: 'Nessuna anteprima disponibile'
     PUBLISHER: Editore
     REVERTTOTHISVERSION: 'Ripristina a questa versione'

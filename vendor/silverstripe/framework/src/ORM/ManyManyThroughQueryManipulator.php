@@ -3,7 +3,6 @@
 
 namespace SilverStripe\ORM;
 
-use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\Deprecation;
@@ -202,8 +201,8 @@ class ManyManyThroughQueryManipulator implements DataQueryManipulator
 
         // Remove `Foreign.` query parameters for created objects,
         // as this would interfere with relations on those objects.
-        foreach (array_keys($params) as $key) {
-            if (stripos($key, 'Foreign.') === 0) {
+        foreach (array_keys($params ?? []) as $key) {
+            if (stripos($key ?? '', 'Foreign.') === 0) {
                 unset($params[$key]);
             }
         }
@@ -237,7 +236,7 @@ class ManyManyThroughQueryManipulator implements DataQueryManipulator
         $hasManyRelation = $this->getParentRelationship($dataQuery);
         $joinTableSQLSelect = $hasManyRelation->dataQuery()->query();
         $joinTableSQL = $joinTableSQLSelect->sql($joinTableParameters);
-        $joinTableColumns = array_keys($joinTableSQLSelect->getSelect()); // Get aliases (keys) only
+        $joinTableColumns = array_keys($joinTableSQLSelect->getSelect() ?? []); // Get aliases (keys) only
         $joinTableAlias = $this->getJoinAlias();
 
         // Get fields to join on

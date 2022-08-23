@@ -96,9 +96,9 @@ class VirtualPage extends Page
         }
 
         // Diff db with non-virtual fields
-        $fields = array_keys(static::getSchema()->fieldSpecs($record));
+        $fields = array_keys(static::getSchema()->fieldSpecs($record) ?? []);
         $nonVirtualFields = $this->getNonVirtualisedFields();
-        return array_diff($fields, $nonVirtualFields);
+        return array_diff($fields ?? [], $nonVirtualFields);
     }
 
     /**
@@ -143,9 +143,10 @@ class VirtualPage extends Page
         $copied = $this->CopyContentFrom();
         if ($copied && $copied->exists()) {
             $tags['canonical'] = [
+                'tag' => 'link',
                 'attributes' => [
                     'rel' => 'canonical',
-                    'content' => $copied->AbsoluteLink(),
+                    'href' => $copied->AbsoluteLink(),
                 ],
             ];
         }
@@ -447,7 +448,7 @@ class VirtualPage extends Page
     {
         // Don't defer if field is non-virtualised
         $ignore = $this->getNonVirtualisedFields();
-        if (in_array($field, $ignore)) {
+        if (in_array($field, $ignore ?? [])) {
             return false;
         }
 
@@ -473,7 +474,7 @@ class VirtualPage extends Page
         if (parent::hasMethod($method)) {
             return parent::__call($method, $args);
         } else {
-            return call_user_func_array([$this->CopyContentFrom(), $method], $args);
+            return call_user_func_array([$this->CopyContentFrom(), $method], $args ?? []);
         }
     }
 

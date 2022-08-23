@@ -2,7 +2,6 @@
 
 namespace SilverStripe\Forms\GridField;
 
-use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\Hierarchy\Hierarchy;
@@ -15,10 +14,8 @@ use SilverStripe\View\SSViewer;
  * hierarchical data. Requires the managed record to have a "getParent()"
  * method or has_one relationship called "Parent".
  */
-class GridFieldLevelup implements GridField_HTMLProvider
+class GridFieldLevelup extends AbstractGridFieldComponent implements GridField_HTMLProvider
 {
-    use Injectable;
-
     /**
      * @var integer - the record id of the level up to
      */
@@ -81,7 +78,7 @@ class GridFieldLevelup implements GridField_HTMLProvider
 
         // Attributes
         $attrs = array_merge($this->attributes, [
-            'href' => sprintf($this->linkSpec, $parentID),
+            'href' => sprintf($this->linkSpec ?? '', $parentID),
             'class' => 'cms-panel-link ss-ui-button font-icon-level-up no-text grid-levelup'
         ]);
         $linkTag = HTML::createTag('a', $attrs);

@@ -27,7 +27,7 @@ class FulltextSearchable extends DataExtension
 
     /**
      * Comma-separated list of database column names
-     * that can be searched on. Used for generation of the database index defintions.
+     * that can be searched on. Used for generation of the database index definitions.
      *
      * @var string
      */
@@ -64,7 +64,7 @@ class FulltextSearchable extends DataExtension
             $searchableClasses = [$searchableClasses];
         }
         foreach ($searchableClasses as $class) {
-            if (!class_exists($class)) {
+            if (!class_exists($class ?? '')) {
                 continue;
             }
 
@@ -84,7 +84,7 @@ class FulltextSearchable extends DataExtension
 
     /**
      * @param array|string $searchFields Comma-separated list (or array) of database column names
-     *  that can be searched on. Used for generation of the database index defintions.
+     *  that can be searched on. Used for generation of the database index definitions.
      */
     public function __construct($searchFields = [])
     {
@@ -92,9 +92,9 @@ class FulltextSearchable extends DataExtension
         if (is_array($searchFields)) {
             $this->searchFields = $searchFields;
         } else {
-            $this->searchFields = explode(',', $searchFields);
+            $this->searchFields = explode(',', $searchFields ?? '');
             foreach ($this->searchFields as &$field) {
-                $field = trim($field);
+                $field = trim($field ?? '');
             }
         }
     }

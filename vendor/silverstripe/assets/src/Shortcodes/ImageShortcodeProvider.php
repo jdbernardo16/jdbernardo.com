@@ -44,19 +44,12 @@ class ImageShortcodeProvider extends FileShortcodeProvider implements ShortcodeH
      */
     public static function handle_shortcode($args, $content, $parser, $shortcode, $extra = [])
     {
-        $allowSessionGrant = static::config()->allow_session_grant;
-
+        /** @var CacheInterface $cache */
         $cache = static::getCache();
-        $cacheKey = static::getCacheKey($args);
-
-        $item = $cache->get($cacheKey);
-        if ($item) {
-            // Initiate a protected asset grant if necessary
-            if (!empty($item['filename']) && $allowSessionGrant) {
-                Injector::inst()->get(AssetStore::class)->grant($item['filename'], $item['hash']);
-            }
-
-            return $item['markup'];
+        $cacheKey = static::getCacheKey($args, $content);
+        $cachedMarkup = static::getCachedMarkup($cache, $cacheKey, $args);
+        if ($cachedMarkup) {
+            return $cachedMarkup;
         }
 
         // Find appropriate record, with fallback for error handlers
@@ -73,7 +66,8 @@ class ImageShortcodeProvider extends FileShortcodeProvider implements ShortcodeH
         // Check if a resize is required
         $width = null;
         $height = null;
-        $src = $record->getURL($allowSessionGrant);
+        $grant = static::getGrant($record);
+        $src = $record->getURL($grant);
         if ($record instanceof Image) {
             $width = isset($args['width']) ? (int) $args['width'] : null;
             $height = isset($args['height']) ? (int) $args['height'] : null;
@@ -82,7 +76,7 @@ class ImageShortcodeProvider extends FileShortcodeProvider implements ShortcodeH
                 $resized = $record->ResizedImage($width, $height);
                 // Make sure that the resized image actually returns an image
                 if ($resized) {
-                    $src = $resized->getURL($allowSessionGrant);
+                    $src = $resized->getURL($grant);
                 }
             }
         }
@@ -106,8 +100,8 @@ class ImageShortcodeProvider extends FileShortcodeProvider implements ShortcodeH
         }
 
         // Clean out any empty attributes (aside from alt)
-        $attrs = array_filter($attrs, function ($k, $v) {
-            return strlen(trim($v)) || $k === 'alt';
+        $attrs = array_filter($attrs ?? [], function ($k, $v) {
+            return strlen(trim($v ?? '')) || $k === 'alt';
         }, ARRAY_FILTER_USE_BOTH);
 
         $markup = HTML::createTag('img', $attrs);
@@ -136,16 +130,18 @@ class ImageShortcodeProvider extends FileShortcodeProvider implements ShortcodeH
      */
     public static function regenerate_shortcode($args, $content, $parser, $shortcode, $extra = [])
     {
+        $allowSessionGrant = static::config()->allow_session_grant;
+
         // Check if there is a suitable record
         $record = static::find_shortcode_record($args);
         if ($record) {
-            $args['src'] = $record->getURL();
+            $args['src'] = $record->getURL($allowSessionGrant);
         }
 
         // Rebuild shortcode
         $parts = [];
         foreach ($args as $name => $value) {
-            $htmlValue = Convert::raw2att($value ?: $name);
+            $htmlValue = Convert::raw2att($value);
             $parts[] = sprintf('%s="%s"', $name, $htmlValue);
         }
         return sprintf("[%s %s]", $shortcode, implode(' ', $parts));

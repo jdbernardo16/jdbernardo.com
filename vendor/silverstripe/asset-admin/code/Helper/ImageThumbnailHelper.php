@@ -107,7 +107,7 @@ class ImageThumbnailHelper
             }
 
             $generated = $this->generateThumbnails($file);
-            if (count($generated) > 0) {
+            if (count($generated ?? []) > 0) {
                 $generatedCount++;
                 $this->logger->debug(sprintf('Generated thumbnail for %s', $file->Filename));
             }
@@ -139,6 +139,10 @@ class ImageThumbnailHelper
     protected function generateThumbnails(File $file)
     {
         $generated = [];
+
+        if ($file->config()->resample_images === false) {
+            return $generated;
+        }
 
         $store = Injector::inst()->get(AssetStore::class);
         $assetAdmin = AssetAdmin::singleton();

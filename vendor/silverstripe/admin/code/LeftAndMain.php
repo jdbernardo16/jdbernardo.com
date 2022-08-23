@@ -219,6 +219,8 @@ class LeftAndMain extends Controller implements PermissionProvider
      * LeftAndMain:
      *   extra_requirements_javascript:
      *     - mysite/javascript/myscript.js
+     *     mysite/javascript/anotherscript.js:
+     *       defer: true
      * </code>
      *
      * @config
@@ -339,7 +341,7 @@ class LeftAndMain extends Controller implements PermissionProvider
             // Trim leading/trailing slash to make it easier to concatenate URL
             // and use in routing definitions.
             'name' => $name,
-            'url' => trim($this->Link(), '/'),
+            'url' => trim($this->Link() ?? '', '/'),
             'form' => [
                 'EditorExternalLink' => [
                     'schemaUrl' => $this->Link('methodSchema/Modals/EditorExternalLink'),
@@ -709,9 +711,10 @@ class LeftAndMain extends Controller implements PermissionProvider
             foreach ($extraJs as $file => $config) {
                 if (is_numeric($file)) {
                     $file = $config;
+                    $config = array();
                 }
 
-                Requirements::javascript($file);
+                Requirements::javascript($file, $config);
             }
         }
 
@@ -723,8 +726,13 @@ class LeftAndMain extends Controller implements PermissionProvider
                     $file = $config;
                     $config = array();
                 }
+                $media = null;
+                if (isset($config['media'])) {
+                     $media = $config['media'];
+                     unset($config['media']);
+                }
 
-                Requirements::css($file, isset($config['media']) ? $config['media'] : null);
+                Requirements::css($file, $media, $config);
             }
         }
 
@@ -736,8 +744,13 @@ class LeftAndMain extends Controller implements PermissionProvider
                     $file = $config;
                     $config = array();
                 }
+                $media = null;
+                if (isset($config['media'])) {
+                     $media = $config['media'];
+                     unset($config['media']);
+                }
 
-                Requirements::themedCSS($file, isset($config['media']) ? $config['media'] : null);
+                Requirements::themedCSS($file, $media, $config);
             }
         }
 
@@ -781,7 +794,7 @@ class LeftAndMain extends Controller implements PermissionProvider
             $response->addHeader('X-Controller', static::class);
         }
         if (!$response->getHeader('X-Title')) {
-            $response->addHeader('X-Title', urlencode($title));
+            $response->addHeader('X-Title', urlencode($title ?? ''));
         }
 
         // Prevent clickjacking, see https://developer.mozilla.org/en-US/docs/HTTP/X-Frame-Options
@@ -913,7 +926,7 @@ class LeftAndMain extends Controller implements PermissionProvider
         // Get default class title
         $title = static::config()->get('menu_title');
         if (!$title) {
-            $title = preg_replace('/Admin$/', '', $class);
+            $title = preg_replace('/Admin$/', '', $class ?? '');
         }
 
         // Check localisation
@@ -935,7 +948,7 @@ class LeftAndMain extends Controller implements PermissionProvider
         $icon = Config::inst()->get($class, 'menu_icon');
         if (!empty($icon)) {
             $iconURL = ModuleResourceLoader::resourceURL($icon);
-            $class = strtolower(Convert::raw2htmlname(str_replace('\\', '-', $class)));
+            $class = strtolower(Convert::raw2htmlname(str_replace('\\', '-', $class ?? '')) ?? '');
             return ".icon.icon-16.icon-{$class} { background-image: url('{$iconURL}'); } ";
         }
         return '';
@@ -1040,7 +1053,7 @@ class LeftAndMain extends Controller implements PermissionProvider
 
                     if ($menuItem->controller && get_class($this) == $menuItem->controller) {
                         $linkingmode = "current";
-                    } elseif (strpos($this->Link(), $menuItem->url) !== false) {
+                    } elseif (strpos($this->Link() ?? '', $menuItem->url ?? '') !== false) {
                         if ($this->Link() == $menuItem->url) {
                             $linkingmode = "current";
 
@@ -1087,7 +1100,7 @@ class LeftAndMain extends Controller implements PermissionProvider
                         "AttributesHTML" => $menuItem->getAttributesHTML(),
                         "Title" => $title,
                         "Code" => $code,
-                        "Icon" => strtolower($code),
+                        "Icon" => strtolower($code ?? ''),
                         "IconClass" => $iconClass,
                         "HasCSSIcon" => $hasCSSIcon,
                         "Link" => $menuItem->url,
@@ -1274,7 +1287,7 @@ class LeftAndMain extends Controller implements PermissionProvider
             $response = $this->getResponseNegotiator()->respond($request);
         }
 
-        $response->addHeader('X-Status', rawurlencode($message));
+        $response->addHeader('X-Status', rawurlencode($message ?? ''));
         return $response;
     }
 
@@ -1312,7 +1325,7 @@ class LeftAndMain extends Controller implements PermissionProvider
 
         $this->getResponse()->addHeader(
             'X-Status',
-            rawurlencode(_t(__CLASS__ . '.DELETED', 'Deleted.'))
+            rawurlencode(_t(__CLASS__ . '.DELETED', 'Deleted.') ?? '')
         );
         return $this->getResponseNegotiator()->respond(
             $this->getRequest(),
@@ -1658,11 +1671,11 @@ class LeftAndMain extends Controller implements PermissionProvider
         if (isset($this->urlParams['ID']) && is_numeric($this->urlParams['ID'])) {
             return $this->urlParams['ID'];
         }
-        
+
         if (is_numeric($this->getRequest()->param('ID'))) {
             return $this->getRequest()->param('ID');
         }
-        
+
         /** @deprecated */
         $session = $this->getRequest()->getSession();
         return $session->get($this->sessionNamespace() . ".currentPage") ?: null;
@@ -1739,7 +1752,8 @@ class LeftAndMain extends Controller implements PermissionProvider
     }
 
     /**
-     * Return the version number of the CMS, ie. '4.2.1'
+     * Return the version number of the CMS in the 'major.minor' format, e.g. '4.2'
+     * Will handle 4.10.x-dev by removing .x-dev
      *
      * @return string
      */
@@ -1747,12 +1761,14 @@ class LeftAndMain extends Controller implements PermissionProvider
     {
         $moduleName = array_keys($this->getVersionProvider()->getModules())[0];
         $lockModules = $this->getVersionProvider()->getModuleVersionFromComposer([$moduleName]);
-
         if (!isset($lockModules[$moduleName])) {
             return '';
         }
-
-        return $lockModules[$moduleName];
+        $version = $lockModules[$moduleName];
+        if (preg_match('#^([0-9]+)\.([0-9]+)#', $version ?? '', $m)) {
+            return $m[1] . '.' . $m[2];
+        }
+        return $version;
     }
 
     /**
@@ -1805,7 +1821,7 @@ class LeftAndMain extends Controller implements PermissionProvider
         }
 
         foreach ($helpLinks as $key => $value) {
-            $translationKey = str_replace(' ', '', $key);
+            $translationKey = str_replace(' ', '', $key ?? '');
 
             $formattedLinks[] = [
                 'Title' => _t(__CLASS__ . '.' . $translationKey, $key),
@@ -1838,7 +1854,7 @@ class LeftAndMain extends Controller implements PermissionProvider
      * @config
      * @var string
      */
-    private static $application_name = 'SilverStripe';
+    private static $application_name = 'Silverstripe';
 
     /**
      * Get the application name.

@@ -172,7 +172,7 @@ class LostPasswordHandler extends RequestHandler
 
         // Allow vetoing forgot password requests
         $results = $this->extend('forgotPassword', $member);
-        if ($results && is_array($results) && in_array(false, $results, true)) {
+        if ($results && is_array($results) && in_array(false, $results ?? [], true)) {
             return $this->redirectToLostPassword();
         }
 
@@ -242,11 +242,13 @@ class LostPasswordHandler extends RequestHandler
             ))
             ->addData('PasswordResetLink', Security::getPasswordResetLink($member, $token))
             ->setTo($member->Email);
+
+        $member->extend('updateForgotPasswordEmail', $email);
         return $email->send();
     }
 
     /**
-     * Avoid information disclosure by displaying the same status, regardless wether the email address actually exists
+     * Avoid information disclosure by displaying the same status, regardless whether the email address actually exists
      *
      * @param array $data
      * @return HTTPResponse

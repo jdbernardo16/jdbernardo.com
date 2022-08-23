@@ -41,6 +41,7 @@ use SilverStripe\Security\Security;
 use SilverStripe\Security\SecurityToken;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\View\Requirements;
+use SilverStripe\View\SSViewer;
 
 /**
  * AssetAdmin is the 'file store' section of the CMS.
@@ -265,7 +266,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
                 'filesizeBase' => 1024,
                 'acceptedFiles' => implode(',', array_map(function ($ext) {
                     return $ext[0] != '.' ? ".$ext" : $ext;
-                }, $validator->getAllowedExtensions()))
+                }, $validator->getAllowedExtensions() ?? []))
             ]
         ]);
     }
@@ -369,7 +370,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
             return null;
         }
         $tmpFile = $data['Upload'];
-        if (empty($data['ID']) || empty($tmpFile['name']) || !array_key_exists('Name', $data)) {
+        if (empty($data['ID']) || empty($tmpFile['name']) || !array_key_exists('Name', $data ?? [])) {
             $this->jsonError(400, _t(__CLASS__.'.INVALID_REQUEST', 'Invalid request'));
             return null;
         }
@@ -419,7 +420,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
             return null;
         }
 
-        $tuple['Name'] = basename($tuple['Filename']);
+        $tuple['Name'] = basename($tuple['Filename'] ?? '');
         return (new HTTPResponse(json_encode($tuple)))
             ->addHeader('Content-Type', 'application/json');
     }
@@ -464,7 +465,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
         // swap the order so we can get the version number to compare against.
         // i.e version 3 needs to know version 2 is the previous version
         $copy = $versions->map('Version', 'Version')->toArray();
-        foreach (array_reverse($copy) as $k => $v) {
+        foreach (array_reverse($copy ?? []) as $k => $v) {
             if ($prev) {
                 $next[$v] = $prev;
             }
@@ -1050,7 +1051,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
             // File::class make sure to register the file extension and your class to config in
             // File::class_for_file_extension
             $currentClass = $record->getClassName();
-            if (!is_a($currentClass, $newClass, true) ||
+            if (!is_a($currentClass, $newClass ?? '', true) ||
                 ($currentClass !== $newClass && $newClass === File::class)
             ) {
                 $record = $record->newClassInstance($newClass);
@@ -1207,7 +1208,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
     public function generateThumbnails(File $file, $thumbnailLinks = false)
     {
         $links = [];
-        if (!$file->getIsImage()) {
+        if (!$file->getIsImage() || $file->config()->resample_images === false) {
             return $links;
         }
         $generator = $this->getThumbnailGenerator();
@@ -1316,7 +1317,7 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
         $upload = Upload::create();
         $upload->getValidator()->setAllowedExtensions(
             // filter out '' since this would be a regex problem on JS end
-            array_filter(File::config()->uninherited('allowed_extensions'))
+            array_filter(File::getAllowedExtensions() ?? [])
         );
         $upload->getValidator()->setAllowedMaxFileSize(
             $this->config()->max_upload_size
@@ -1425,12 +1426,23 @@ class AssetAdmin extends LeftAndMain implements PermissionProvider
         // Since admin/assets is used as the endpoint for various other CMS modals,
         // we need to permit most admin/assets actions
         $asAjax = $this->getRequest()->isAjax()
-            || in_array('application/json', $this->getRequest()->getAcceptMimetypes(false));
+            || in_array('application/json', $this->getRequest()->getAcceptMimetypes(false) ?? []);
         if ($asAjax && Permission::checkMember($member, 'CMS_ACCESS')) {
             return true;
         }
 
         // Default permissions
         return parent::canView($member);
+    }
+
+    public function PreviewPanel()
+    {
+        $templates = SSViewer::get_templates_by_class(get_class($this), '_PreviewPanel', __CLASS__);
+        $template = SSViewer::chooseTemplate($templates);
+        // Only render preview panel if a template specifically for the asset admin has been provided
+        if ($template) {
+            return $this->renderWith($template);
+        }
+        return null;
     }
 }

@@ -13,6 +13,7 @@ use SilverStripe\ORM\DataObjectInterface;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\ValidationResult;
+use SilverStripe\View\AttributesHTML;
 use SilverStripe\View\SSViewer;
 
 /**
@@ -41,6 +42,7 @@ use SilverStripe\View\SSViewer;
  */
 class FormField extends RequestHandler
 {
+    use AttributesHTML;
     use FormMessage;
 
     /** @see $schemaDataType */
@@ -215,17 +217,6 @@ class FormField extends RequestHandler
     protected $smallFieldHolderTemplate;
 
     /**
-     * All attributes on the form field (not the field holder).
-     *
-     * Partially determined based on other instance properties.
-     *
-     * @see getAttributes()
-     *
-     * @var array
-     */
-    protected $attributes = [];
-
-    /**
      * The data type backing the field. Represents the type of value the
      * form expects to receive via a postback. Should be set in subclasses.
      *
@@ -311,11 +302,11 @@ class FormField extends RequestHandler
     public static function name_to_label($fieldName)
     {
         // Handle dot delimiters
-        if (strpos($fieldName, '.') !== false) {
-            $parts = explode('.', $fieldName);
+        if (strpos($fieldName ?? '', '.') !== false) {
+            $parts = explode('.', $fieldName ?? '');
             // Ensure that any letter following a dot is uppercased, so that the regex below can break it up
             // into words
-            $label = implode(array_map('ucfirst', $parts));
+            $label = implode(array_map('ucfirst', $parts ?? []));
         } else {
             $label = $fieldName;
         }
@@ -323,14 +314,14 @@ class FormField extends RequestHandler
         // Replace any capital letter that is followed by a lowercase letter with a space, the lowercased
         // version of itself then the remaining lowercase letters.
         $labelWithSpaces = preg_replace_callback('/([A-Z])([a-z]+)/', function ($matches) {
-            return ' ' . strtolower($matches[1]) . $matches[2];
-        }, $label);
+            return ' ' . strtolower($matches[1] ?? '') . $matches[2];
+        }, $label ?? '');
 
         // Add a space before any capital letter block that is at the end of the string
-        $labelWithSpaces = preg_replace('/([a-z])([A-Z]+)$/', '$1 $2', $labelWithSpaces);
+        $labelWithSpaces = preg_replace('/([a-z])([A-Z]+)$/', '$1 $2', $labelWithSpaces ?? '');
 
         // The first letter should be uppercase
-        return ucfirst(trim($labelWithSpaces));
+        return ucfirst(trim($labelWithSpaces ?? ''));
     }
 
     /**
@@ -478,9 +469,9 @@ class FormField extends RequestHandler
         $fieldName = $this->name;
 
         // Allow for dot syntax
-        if (($pos = strrpos($this->name, '.')) !== false) {
-            $relation = substr($this->name, 0, $pos);
-            $fieldName = substr($this->name, $pos + 1);
+        if (($pos = strrpos($this->name ?? '', '.')) !== false) {
+            $relation = substr($this->name ?? '', 0, $pos);
+            $fieldName = substr($this->name ?? '', $pos + 1);
             $component = $record->relObject($relation);
         }
 
@@ -583,7 +574,7 @@ class FormField extends RequestHandler
         if ($this->extraClasses) {
             $classes = array_merge(
                 $classes,
-                array_values($this->extraClasses)
+                array_values($this->extraClasses ?? [])
             );
         }
 
@@ -603,6 +594,25 @@ class FormField extends RequestHandler
     }
 
     /**
+     * Check if a CSS-class has been added to the form container.
+     *
+     * @param string $class A string containing a classname or several class
+     * names delimited by a single space.
+     * @return boolean True if all of the classnames passed in have been added.
+     */
+    public function hasExtraClass($class)
+    {
+        //split at white space
+        $classes = preg_split('/\s+/', $class ?? '');
+        foreach ($classes as $class) {
+            if (!isset($this->extraClasses[$class])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Add one or more CSS-classes to the FormField container.
      *
      * Multiple class names should be space delimited.
@@ -613,7 +623,7 @@ class FormField extends RequestHandler
      */
     public function addExtraClass($class)
     {
-        $classes = preg_split('/\s+/', $class);
+        $classes = preg_split('/\s+/', $class ?? '');
 
         foreach ($classes as $class) {
             $this->extraClasses[$class] = $class;
@@ -631,7 +641,7 @@ class FormField extends RequestHandler
      */
     public function removeExtraClass($class)
     {
-        $classes = preg_split('/\s+/', $class);
+        $classes = preg_split('/\s+/', $class ?? '');
 
         foreach ($classes as $class) {
             unset($this->extraClasses[$class]);
@@ -640,59 +650,7 @@ class FormField extends RequestHandler
         return $this;
     }
 
-    /**
-     * Set an HTML attribute on the field element, mostly an input tag.
-     *
-     * Some attributes are best set through more specialized methods, to avoid interfering with
-     * built-in behaviour:
-     *
-     * - 'class': {@link addExtraClass()}
-     * - 'title': {@link setDescription()}
-     * - 'value': {@link setValue}
-     * - 'name': {@link setName}
-     *
-     * Caution: this doesn't work on most fields which are composed of more than one HTML form
-     * field.
-     *
-     * @param string $name
-     * @param string $value
-     *
-     * @return $this
-     */
-    public function setAttribute($name, $value)
-    {
-        $this->attributes[$name] = $value;
-
-        return $this;
-    }
-
-    /**
-     * Get an HTML attribute defined by the field, or added through {@link setAttribute()}.
-     *
-     * Caution: this doesn't work on all fields, see {@link setAttribute()}.
-     *
-     * @param string $name
-     * @return string
-     */
-    public function getAttribute($name)
-    {
-        $attributes = $this->getAttributes();
-
-        if (isset($attributes[$name])) {
-            return $attributes[$name];
-        }
-
-        return null;
-    }
-
-    /**
-     * Allows customization through an 'updateAttributes' hook on the base class.
-     * Existing attributes are passed in as the first argument and can be manipulated,
-     * but any attributes added through a subclass implementation won't be included.
-     *
-     * @return array
-     */
-    public function getAttributes()
+    protected function getDefaultAttributes(): array
     {
         $attributes = [
             'type' => $this->getInputType(),
@@ -710,65 +668,7 @@ class FormField extends RequestHandler
             $attributes['aria-required'] = 'true';
         }
 
-        $attributes = array_merge($attributes, $this->attributes);
-
-        $this->extend('updateAttributes', $attributes);
-
         return $attributes;
-    }
-
-    /**
-     * Custom attributes to process. Falls back to {@link getAttributes()}.
-     *
-     * If at least one argument is passed as a string, all arguments act as excludes, by name.
-     *
-     * @param array $attributes
-     *
-     * @return string
-     */
-    public function getAttributesHTML($attributes = null)
-    {
-        $exclude = null;
-
-        if (is_string($attributes)) {
-            $exclude = func_get_args();
-        }
-
-        if (!$attributes || is_string($attributes)) {
-            $attributes = $this->getAttributes();
-        }
-
-        $attributes = (array) $attributes;
-
-        $attributes = array_filter($attributes, function ($v) {
-            return ($v || $v === 0 || $v === '0');
-        });
-
-        if ($exclude) {
-            $attributes = array_diff_key(
-                $attributes,
-                array_flip($exclude)
-            );
-        }
-
-        // Create markup
-        $parts = [];
-
-        foreach ($attributes as $name => $value) {
-            if ($value === true) {
-                $value = $name;
-            } else {
-                if (is_scalar($value)) {
-                    $value = (string) $value;
-                } else {
-                    $value = json_encode($value);
-                }
-            }
-
-            $parts[] = sprintf('%s="%s"', Convert::raw2att($name), Convert::raw2att($value));
-        }
-
-        return implode(' ', $parts);
     }
 
     /**
@@ -894,7 +794,7 @@ class FormField extends RequestHandler
     public function castingHelper($field)
     {
         // Override casting for field message
-        if (strcasecmp($field, 'Message') === 0 && ($helper = $this->getMessageCastingHelper())) {
+        if (strcasecmp($field ?? '', 'Message') === 0 && ($helper = $this->getMessageCastingHelper())) {
             return $helper;
         }
         return parent::castingHelper($field);
@@ -1021,7 +921,7 @@ class FormField extends RequestHandler
 
         $this->extend('onBeforeRender', $context, $properties);
 
-        if (count($properties)) {
+        if (count($properties ?? [])) {
             $context = $context->customise($properties);
         }
 
@@ -1029,9 +929,9 @@ class FormField extends RequestHandler
 
         // Trim whitespace from the result, so that trailing newlines are suppressed. Works for strings and HTMLText values
         if (is_string($result)) {
-            $result = trim($result);
+            $result = trim($result ?? '');
         } elseif ($result instanceof DBField) {
-            $result->setValue(trim($result->getValue()));
+            $result->setValue(trim($result->getValue() ?? ''));
         }
 
         return $result;
@@ -1056,7 +956,7 @@ class FormField extends RequestHandler
 
         $this->extend('onBeforeRenderHolder', $context, $properties);
 
-        if (count($properties)) {
+        if (count($properties ?? [])) {
             $context = $this->customise($properties);
         }
 
@@ -1074,7 +974,7 @@ class FormField extends RequestHandler
     {
         $context = $this;
 
-        if (count($properties)) {
+        if (count($properties ?? [])) {
             $context = $this->customise($properties);
         }
 
@@ -1298,8 +1198,8 @@ class FormField extends RequestHandler
      */
     public function hasClass($class)
     {
-        $classes = explode(' ', strtolower($this->extraClass()));
-        return in_array(strtolower(trim($class)), $classes);
+        $classes = explode(' ', strtolower($this->extraClass() ?? ''));
+        return in_array(strtolower(trim($class ?? '')), $classes ?? []);
     }
 
     /**
@@ -1316,7 +1216,7 @@ class FormField extends RequestHandler
     public function Type()
     {
         $type = new ReflectionClass($this);
-        return strtolower(preg_replace('/Field$/', '', $type->getShortName()));
+        return strtolower(preg_replace('/Field$/', '', $type->getShortName() ?? '') ?? '');
     }
 
     /**
@@ -1455,13 +1355,14 @@ class FormField extends RequestHandler
             $field = $classOrCopy::create($this->name);
         }
 
+        $extraClasses = $this->extraClasses ? array_values($this->extraClasses) : [];
         $field
             ->setValue($this->value)
             ->setForm($this->form)
             ->setTitle($this->Title())
             ->setLeftTitle($this->LeftTitle())
             ->setRightTitle($this->RightTitle())
-            ->addExtraClass($this->extraClass) // Don't use extraClass(), since this merges calculated values
+            ->addExtraClass(implode(' ', $extraClasses)) // Don't use extraClass(), since this merges calculated values
             ->setDescription($this->getDescription());
 
         // Only include built-in attributes, ignore anything set through getAttributes().
@@ -1519,7 +1420,7 @@ class FormField extends RequestHandler
     public function setSchemaData($schemaData = [])
     {
         $defaults = $this->getSchemaData();
-        $this->schemaData = array_merge($this->schemaData, array_intersect_key($schemaData, $defaults));
+        $this->schemaData = array_merge($this->schemaData, array_intersect_key($schemaData ?? [], $defaults));
         return $this;
     }
 
@@ -1531,7 +1432,7 @@ class FormField extends RequestHandler
     public function getSchemaData()
     {
         $defaults = $this->getSchemaDataDefaults();
-        return array_replace_recursive($defaults, array_intersect_key($this->schemaData, $defaults));
+        return array_replace_recursive($defaults ?? [], array_intersect_key($this->schemaData ?? [], $defaults));
     }
 
     /**
@@ -1595,7 +1496,7 @@ class FormField extends RequestHandler
     public function setSchemaState($schemaState = [])
     {
         $defaults = $this->getSchemaState();
-        $this->schemaState = array_merge($this->schemaState, array_intersect_key($schemaState, $defaults));
+        $this->schemaState = array_merge($this->schemaState, array_intersect_key($schemaState ?? [], $defaults));
         return $this;
     }
 
@@ -1607,7 +1508,7 @@ class FormField extends RequestHandler
     public function getSchemaState()
     {
         $defaults = $this->getSchemaStateDefaults();
-        return array_merge($defaults, array_intersect_key($this->schemaState, $defaults));
+        return array_merge($defaults, array_intersect_key($this->schemaState ?? [], $defaults));
     }
 
     /**

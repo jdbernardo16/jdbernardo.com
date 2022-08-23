@@ -5,6 +5,7 @@ namespace SilverStripe\ORM\Search;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Injector\Injectable;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\FormField;
 use SilverStripe\ORM\DataObject;
@@ -16,6 +17,7 @@ use SilverStripe\Forms\SelectField;
 use SilverStripe\Forms\CheckboxField;
 use InvalidArgumentException;
 use Exception;
+use SilverStripe\ORM\DataQuery;
 
 /**
  * Manages searching of properties on one or more {@link DataObject}
@@ -73,7 +75,8 @@ class SearchContext
     protected $searchParams = [];
 
     /**
-     * The logical connective used to join WHERE clauses. Defaults to AND.
+     * The logical connective used to join WHERE clauses. Must be "AND".
+     * @deprecated 5.0
      * @var string
      */
     public $connective = 'AND';
@@ -145,6 +148,10 @@ class SearchContext
      */
     public function getQuery($searchParams, $sort = false, $limit = false, $existingQuery = null)
     {
+        if ($this->connective != "AND") {
+            throw new Exception("SearchContext connective '$this->connective' not supported after ORM-rewrite.");
+        }
+
         /** DataList $query */
         $query = null;
         if ($existingQuery) {
@@ -173,19 +180,31 @@ class SearchContext
         $query = $query->sort($sort);
         $this->setSearchParams($searchParams);
 
+        $modelObj = Injector::inst()->create($this->modelClass);
+        $searchableFields = $modelObj->searchableFields();
         foreach ($this->searchParams as $key => $value) {
-            $key = str_replace('__', '.', $key);
+            $key = str_replace('__', '.', $key ?? '');
             if ($filter = $this->getFilter($key)) {
                 $filter->setModel($this->modelClass);
                 $filter->setValue($value);
                 if (!$filter->isEmpty()) {
-                    $query = $query->alterDataQuery([$filter, 'apply']);
+                    if (isset($searchableFields[$key]['match_any'])) {
+                        $searchFields = $searchableFields[$key]['match_any'];
+                        $filterClass = get_class($filter);
+                        $modifiers = $filter->getModifiers();
+                        $query = $query->alterDataQuery(function (DataQuery $dataQuery) use ($searchFields, $filterClass, $modifiers, $value) {
+                            $subGroup = $dataQuery->disjunctiveGroup();
+                            foreach ($searchFields as $matchField) {
+                                /** @var SearchFilter $filterClass */
+                                $filter = new $filterClass($matchField, $value, $modifiers);
+                                $filter->apply($subGroup);
+                            }
+                        });
+                    } else {
+                        $query = $query->alterDataQuery([$filter, 'apply']);
+                    }
                 }
             }
-        }
-
-        if ($this->connective != "AND") {
-            throw new Exception("SearchContext connective '$this->connective' not supported after ORM-rewrite.");
         }
 
         return $query;

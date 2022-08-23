@@ -1,12 +1,7 @@
-## SilverStripe Versioned
+## Silverstripe Versioned
 
-[![Build Status](https://api.travis-ci.com/silverstripe/silverstripe-versioned.svg?branch=1)](https://travis-ci.com/silverstripe/silverstripe-versioned)
-[![SilverStripe supported module](https://img.shields.io/badge/silverstripe-supported-0071C4.svg)](https://www.silverstripe.org/software/addons/silverstripe-commercially-supported-module-list/)
-[![Latest Stable Version](https://poser.pugx.org/silverstripe/versioned/version.svg)](http://www.silverstripe.org/stable-download/)
-[![Latest Unstable Version](https://poser.pugx.org/silverstripe/versioned/v/unstable.svg)](https://packagist.org/packages/silverstripe/versioned)
-[![Total Downloads](https://poser.pugx.org/silverstripe/versioned/downloads.svg)](https://packagist.org/packages/silverstripe/versioned)
-[![License](https://poser.pugx.org/silverstripe/versioned/license.svg)](https://github.com/silverstripe/silverstripe-versioned#license)
-![helpfulrobot](https://helpfulrobot.io/silverstripe/versioned/badge)
+[![CI](https://github.com/silverstripe/silverstripe-versioned/actions/workflows/ci.yml/badge.svg)](https://github.com/silverstripe/silverstripe-versioned/actions/workflows/ci.yml)
+[![Silverstripe supported module](https://img.shields.io/badge/silverstripe-supported-0071C4.svg)](https://www.silverstripe.org/software/addons/silverstripe-commercially-supported-module-list/)
 
 ## Overview
 

@@ -8,11 +8,11 @@ use SilverStripe\View\SSViewer;
 /**
  * Groups exiting actions in the Actions column in to a menu
  */
-class GridField_ActionMenu implements GridField_ColumnProvider, GridField_ActionProvider
+class GridField_ActionMenu extends AbstractGridFieldComponent implements GridField_ColumnProvider, GridField_ActionProvider
 {
     public function augmentColumns($gridField, &$columns)
     {
-        if (!in_array('Actions', $columns)) {
+        if (!in_array('Actions', $columns ?? [])) {
             $columns[] = 'Actions';
         }
     }
@@ -86,7 +86,7 @@ class GridField_ActionMenu implements GridField_ColumnProvider, GridField_Action
                 $actions = $item->getActions($gridField);
             }
 
-            if (in_array($actionName, $actions)) {
+            if (in_array($actionName, $actions ?? [])) {
                 $item->handleAction($gridField, $actionName, $arguments, $data);
             }
         }

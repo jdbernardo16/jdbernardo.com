@@ -1,4 +1,6 @@
 eo:
+  SilverStripe\Admin\LeftAndMain:
+    VersionUnknown: nekonata
   SilverStripe\AssetAdmin\Forms\UploadField:
     Dimensions: Dimensioj
     EDIT: Redakti

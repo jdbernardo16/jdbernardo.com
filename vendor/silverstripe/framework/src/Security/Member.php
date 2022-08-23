@@ -106,7 +106,7 @@ class Member extends DataObject
      * @config
      * @var boolean
      */
-    private static $notify_password_change = false;
+    private static $notify_password_change = true;
 
     /**
      * All searchable database columns
@@ -444,7 +444,7 @@ class Member extends DataObject
             return false;
         }
 
-        return strtotime(date('Y-m-d')) >= strtotime($this->PasswordExpiry);
+        return strtotime(date('Y-m-d')) >= strtotime($this->PasswordExpiry ?? '');
     }
 
     /**
@@ -847,20 +847,20 @@ class Member extends DataObject
     {
         $words = Security::config()->uninherited('word_list');
 
-        if ($words && file_exists($words)) {
-            $words = file($words);
+        if ($words && file_exists($words ?? '')) {
+            $words = file($words ?? '');
 
-            list($usec, $sec) = explode(' ', microtime());
+            list($usec, $sec) = explode(' ', microtime() ?? '');
             mt_srand($sec + ((float)$usec * 100000));
 
-            $word = trim($words[random_int(0, count($words) - 1)]);
+            $word = trim($words[random_int(0, count($words) - 1)] ?? '');
             $number = random_int(10, 999);
 
             return $word . $number;
         } else {
             $random = mt_rand();
-            $string = md5($random);
-            $output = substr($string, 0, 8);
+            $string = md5($random ?? '');
+            $output = substr($string ?? '', 0, 8);
 
             return $output;
         }
@@ -873,7 +873,7 @@ class Member extends DataObject
     {
         // Remove any line-break or space characters accidentally added during a copy-paste operation
         if ($this->Email) {
-            $this->Email = trim($this->Email);
+            $this->Email = trim($this->Email ?? '');
         }
 
         // If a member with the same "unique identifier" already exists with a different ID, don't allow merging.
@@ -910,10 +910,11 @@ class Member extends DataObject
         if ((Director::isLive() || Injector::inst()->get(Mailer::class) instanceof TestMailer)
             && $this->isChanged('Password')
             && $this->record['Password']
+            && $this->Email
             && static::config()->get('notify_password_change')
             && $this->isInDB()
         ) {
-            Email::create()
+            $email = Email::create()
                 ->setHTMLTemplate('SilverStripe\\Control\\Email\\ChangePasswordEmail')
                 ->setData($this)
                 ->setTo($this->Email)
@@ -921,8 +922,10 @@ class Member extends DataObject
                     __CLASS__ . '.SUBJECTPASSWORDCHANGED',
                     "Your password has been changed",
                     'Email subject'
-                ))
-                ->send();
+                ));
+
+            $this->extend('updateChangedPasswordEmail', $email);
+            $email->send();
         }
 
         // The test on $this->ID is used for when records are initially created. Note that this only works with
@@ -934,6 +937,11 @@ class Member extends DataObject
         // save locale
         if (!$this->Locale) {
             $this->Locale = i18n::config()->get('default_locale');
+        }
+
+        // Ensure FailedLoginCount is non-negative
+        if ($this->FailedLoginCount < 0) {
+            $this->FailedLoginCount = 0;
         }
 
         parent::onBeforeWrite();
@@ -985,7 +993,7 @@ class Member extends DataObject
     {
         // Ensure none of these match disallowed list
         $disallowedGroupIDs = $this->disallowedGroups();
-        return count(array_intersect($ids, $disallowedGroupIDs)) == 0;
+        return count(array_intersect($ids ?? [], $disallowedGroupIDs)) == 0;
     }
 
     /**
@@ -1156,7 +1164,7 @@ class Member extends DataObject
                 $values[] = $this->getField($col);
             }
 
-            return implode($format['sep'], $values);
+            return implode($format['sep'] ?? '', $values);
         }
         if ($this->getField('ID') === 0) {
             return $this->getField('Surname');
@@ -1223,7 +1231,7 @@ class Member extends DataObject
      */
     public function setName($name)
     {
-        $nameParts = explode(' ', $name);
+        $nameParts = explode(' ', $name ?? '');
         $this->Surname = array_pop($nameParts);
         $this->FirstName = join(' ', $nameParts);
     }
@@ -1384,7 +1392,7 @@ class Member extends DataObject
             return ArrayList::create()->map();
         }
 
-        if (count($groups) == 0) {
+        if (count($groups ?? []) == 0) {
             $perms = ['ADMIN', 'CMS_ACCESS_AssetAdmin'];
 
             if (class_exists(CMSMain::class)) {
@@ -1394,7 +1402,7 @@ class Member extends DataObject
             }
 
             if (!empty($cmsPerms)) {
-                $perms = array_unique(array_merge($perms, array_keys($cmsPerms)));
+                $perms = array_unique(array_merge($perms, array_keys($cmsPerms ?? [])));
             }
 
             $permsClause = DB::placeholders($perms);
@@ -1449,8 +1457,8 @@ class Member extends DataObject
         }
 
         foreach ($memberGroups as $group) {
-            if (in_array($group->Code, $groupList)) {
-                $index = array_search($group->Code, $groupList);
+            if (in_array($group->Code, $groupList ?? [])) {
+                $index = array_search($group->Code, $groupList ?? []);
                 unset($groupList[$index]);
             }
         }

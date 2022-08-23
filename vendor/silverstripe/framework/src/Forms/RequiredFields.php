@@ -23,7 +23,7 @@ class RequiredFields extends Validator
     protected $required;
 
     /**
-     * Pass each field to be validated as a seperate argument to the constructor
+     * Pass each field to be validated as a separate argument to the constructor
      * of this object. (an array of elements are ok).
      */
     public function __construct()
@@ -113,11 +113,11 @@ class RequiredFields extends Validator
                 if ($formField instanceof FileField && isset($value['error']) && $value['error']) {
                     $error = true;
                 } else {
-                    $error = (count($value)) ? false : true;
+                    $error = (count($value ?? [])) ? false : true;
                 }
             } else {
                 // assume a string or integer
-                $error = (strlen($value)) ? false : true;
+                $error = (strlen($value ?? '')) ? false : true;
             }
 
             if ($formField && $error) {
@@ -213,7 +213,7 @@ class RequiredFields extends Validator
      */
     public function getRequired()
     {
-        return array_values($this->required);
+        return array_values($this->required ?? []);
     }
 
     /**
@@ -221,6 +221,6 @@ class RequiredFields extends Validator
      */
     public function canBeCached(): bool
     {
-        return count($this->getRequired()) === 0;
+        return count($this->getRequired() ?? []) === 0;
     }
 }

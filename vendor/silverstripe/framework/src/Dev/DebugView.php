@@ -13,7 +13,7 @@ use SilverStripe\Core\Manifest\ModuleLoader;
 use SilverStripe\Core\Manifest\ModuleResourceLoader;
 
 /**
- * A basic HTML wrapper for stylish rendering of a developement info view.
+ * A basic HTML wrapper for stylish rendering of a development info view.
  * Used to output error messages, and test results.
  */
 class DebugView
@@ -124,12 +124,12 @@ class DebugView
      */
     public function Breadcrumbs()
     {
-        $basePath = str_replace(Director::protocolAndHost(), '', Director::absoluteBaseURL());
+        $basePath = str_replace(Director::protocolAndHost() ?? '', '', Director::absoluteBaseURL() ?? '');
         $relPath = parse_url(
-            substr($_SERVER['REQUEST_URI'], strlen($basePath), strlen($_SERVER['REQUEST_URI'])),
+            substr($_SERVER['REQUEST_URI'] ?? '', strlen($basePath ?? ''), strlen($_SERVER['REQUEST_URI'] ?? '')),
             PHP_URL_PATH
         );
-        $parts = explode('/', $relPath);
+        $parts = explode('/', $relPath ?? '');
         $base = Director::absoluteBaseURL();
         $pathPart = "";
         $pathLinks = [];
@@ -270,16 +270,16 @@ class DebugView
      * @param string $httpRequest the kind of request
      * @param int $errno Codenumber of the error
      * @param string $errstr The error message
-     * @param string $errfile The name of the soruce code file where the error occurred
-     * @param int $errline The line number on which the error occured
+     * @param string $errfile The name of the source code file where the error occurred
+     * @param int $errline The line number on which the error occurred
      * @return string
      */
     public function renderError($httpRequest, $errno, $errstr, $errfile, $errline)
     {
         $errorType = isset(self::$error_types[$errno]) ? self::$error_types[$errno] : self::$unknown_error;
-        $httpRequestEnt = htmlentities($httpRequest, ENT_COMPAT, 'UTF-8');
+        $httpRequestEnt = htmlentities($httpRequest ?? '', ENT_COMPAT, 'UTF-8');
         if (ini_get('html_errors')) {
-            $errstr = strip_tags($errstr);
+            $errstr = strip_tags($errstr ?? '');
         } else {
             $errstr = Convert::raw2xml($errstr);
         }
@@ -304,7 +304,7 @@ class DebugView
         $output = '<div class="info"><h3>Source</h3>';
         $output .= '<pre>';
         foreach ($lines as $offset => $line) {
-            $line = htmlentities($line, ENT_COMPAT, 'UTF-8');
+            $line = htmlentities($line ?? '', ENT_COMPAT, 'UTF-8');
             if ($offset == $errline) {
                 $output .= "<span>$offset</span> <span class=\"error\">$line</span>";
             } else {
@@ -351,7 +351,7 @@ class DebugView
      */
     protected function formatCaller($caller)
     {
-        $return = basename($caller['file']) . ":" . $caller['line'];
+        $return = basename($caller['file'] ?? '') . ":" . $caller['line'];
         if (!empty($caller['class']) && !empty($caller['function'])) {
             $return .= " - {$caller['class']}::{$caller['function']}()";
         }
@@ -370,7 +370,7 @@ class DebugView
         $output = '<pre style="background-color:#ccc;padding:5px;font-size:14px;line-height:18px;">';
         $output .= "<span style=\"font-size: 12px;color:#666;\">" . $this->formatCaller($caller) . " - </span>\n";
         if (is_string($val)) {
-            $output .= wordwrap($val, self::config()->columns);
+            $output .= wordwrap($val ?? '', self::config()->columns ?? 0);
         } else {
             $output .= var_export($val, true);
         }
@@ -383,7 +383,7 @@ class DebugView
     {
         $header = '';
         if ($showHeader) {
-            $file = basename($caller['file']);
+            $file = basename($caller['file'] ?? '');
             $line = $caller['line'];
             $header .= "<b>Debug (line {$line} of {$file}):</b>\n";
         }

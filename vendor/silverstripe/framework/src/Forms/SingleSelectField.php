@@ -34,11 +34,18 @@ abstract class SingleSelectField extends SelectField
     {
         $data = parent::getSchemaStateDefaults();
 
+        $data['value'] = $this->getDefaultValue();
+
+        return $data;
+    }
+
+    public function getSchemaDataDefaults()
+    {
+        $data = parent::getSchemaDataDefaults();
+
         // Add options to 'data'
         $data['data']['hasEmptyDefault'] = $this->getHasEmptyDefault();
         $data['data']['emptyString'] = $this->getHasEmptyDefault() ? $this->getEmptyString() : null;
-
-        $data['value'] = $this->getDefaultValue();
 
         return $data;
     }
@@ -126,7 +133,7 @@ abstract class SingleSelectField extends SelectField
         $selected = $this->Value();
         $validValues = $this->getValidValues();
 
-        if (strlen($selected)) {
+        if (strlen($selected ?? '')) {
             // Use selection rules to check which are valid
             foreach ($validValues as $formValue) {
                 if ($this->isSelectedValue($formValue, $selected)) {
@@ -134,7 +141,7 @@ abstract class SingleSelectField extends SelectField
                 }
             }
         } else {
-            if ($this->getHasEmptyDefault() || !$validValues || in_array('', $validValues)) {
+            if ($this->getHasEmptyDefault() || !$validValues || in_array('', $validValues ?? [])) {
                 // Check empty value
                 return true;
             }

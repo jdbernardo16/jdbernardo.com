@@ -59,7 +59,7 @@ class DBTime extends DBField
             $source = $value; // parse timestamp
         } else {
             // Convert using strtotime
-            $source = strtotime($value);
+            $source = strtotime($value ?? '');
         }
         if ($value === false) {
             return false;
@@ -114,7 +114,7 @@ class DBTime extends DBField
     /**
      * Return the time using a particular formatting string.
      *
-     * @param string $format Format code string. See http://userguide.icu-project.org/formatparse/datetime
+     * @param string $format Format code string. See https://unicode-org.github.io/icu/userguide/format_parse/datetime
      * @return string The time in the requested format
      */
     public function Format($format)
@@ -185,7 +185,7 @@ class DBTime extends DBField
     public function getTimestamp()
     {
         if ($this->value) {
-            return strtotime($this->value);
+            return strtotime($this->value ?? '');
         }
         return 0;
     }

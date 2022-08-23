@@ -47,7 +47,7 @@ class PaginatedList extends ListDecorator
      * Returns the GET var that is used to set the page start. This defaults
      * to "start".
      *
-     * If there is more than one paginated list on a page, it is neccesary to
+     * If there is more than one paginated list on a page, it is necessary to
      * set a different get var for each using {@link setPaginationGetVar()}.
      *
      * @return string
@@ -146,7 +146,7 @@ class PaginatedList extends ListDecorator
     public function getTotalItems()
     {
         if ($this->totalItems === null) {
-            $this->totalItems = count($this->list);
+            $this->totalItems = count($this->list ?? []);
         }
 
         return $this->totalItems;
@@ -211,6 +211,7 @@ class PaginatedList extends ListDecorator
     /**
      * @return IteratorIterator
      */
+    #[\ReturnTypeWillChange]
     public function getIterator()
     {
         $pageLength = $this->getPageLength();
@@ -352,7 +353,7 @@ class PaginatedList extends ListDecorator
                     'Link' => null,
                     'CurrentBool' => false
                 ]));
-            } elseif ($num == 1 || $num == $total || in_array($num, $range)) {
+            } elseif ($num == 1 || $num == $total || in_array($num, $range ?? [])) {
                 $result->push(new ArrayData([
                     'PageNum' => $num,
                     'Link' => $link,
@@ -397,9 +398,25 @@ class PaginatedList extends ListDecorator
     /**
      * @return bool
      */
+    public function FirstPage()
+    {
+        return $this->CurrentPage() == 1;
+    }
+
+    /**
+     * @return bool
+     */
     public function NotFirstPage()
     {
-        return $this->CurrentPage() != 1;
+        return !$this->FirstPage();
+    }
+
+    /**
+     * @return bool
+     */
+    public function LastPage()
+    {
+        return $this->CurrentPage() == $this->TotalPages();
     }
 
     /**
@@ -407,7 +424,7 @@ class PaginatedList extends ListDecorator
      */
     public function NotLastPage()
     {
-        return $this->CurrentPage() < $this->TotalPages();
+        return !$this->LastPage();
     }
 
     /**

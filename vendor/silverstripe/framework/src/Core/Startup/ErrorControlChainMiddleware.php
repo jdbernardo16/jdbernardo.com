@@ -77,7 +77,7 @@ class ErrorControlChainMiddleware implements HTTPMiddleware
                 if ($confirmationTokenChain->suppressionRequired()) {
                     $confirmationTokenChain->suppressTokens();
                 } else {
-                    // If no redirection is necessary then we can disable error supression
+                    // If no redirection is necessary then we can disable error suppression
                     $errorControlChain->setSuppression(false);
                 }
 
@@ -138,9 +138,9 @@ class ErrorControlChainMiddleware implements HTTPMiddleware
 
         // Fail and redirect the user to the login page
         $params = array_merge($request->getVars(), $confirmationTokenChain->params(false));
-        $backURL = $confirmationTokenChain->getRedirectUrlBase() . '?' . http_build_query($params);
+        $backURL = $confirmationTokenChain->getRedirectUrlBase() . '?' . http_build_query($params ?? []);
         $loginPage = Director::absoluteURL(Security::config()->get('login_url'));
-        $loginPage .= "?BackURL=" . urlencode($backURL);
+        $loginPage .= "?BackURL=" . urlencode($backURL ?? '');
         $result = new HTTPResponse();
         $result->redirect($loginPage);
         return $result;

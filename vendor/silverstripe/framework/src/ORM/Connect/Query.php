@@ -31,14 +31,14 @@ abstract class Query implements Iterator
 {
 
     /**
-     * The current record in the interator.
+     * The current record in the iterator.
      *
      * @var array
      */
     protected $currentRecord = null;
 
     /**
-     * The number of the current row in the interator.
+     * The number of the current row in the iterator.
      *
      * @var int
      */
@@ -170,6 +170,7 @@ abstract class Query implements Iterator
      *
      * @return void
      */
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         if ($this->queryHasBegun && $this->numRecords() > 0) {
@@ -184,6 +185,7 @@ abstract class Query implements Iterator
      *
      * @return array
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if (!$this->currentRecord) {
@@ -209,6 +211,7 @@ abstract class Query implements Iterator
      *
      * @return int
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->rowNum;
@@ -220,6 +223,7 @@ abstract class Query implements Iterator
      *
      * @return array
      */
+    #[\ReturnTypeWillChange]
     public function next()
     {
         $this->queryHasBegun = true;
@@ -233,6 +237,7 @@ abstract class Query implements Iterator
      *
      * @return bool
      */
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         if (!$this->queryHasBegun) {

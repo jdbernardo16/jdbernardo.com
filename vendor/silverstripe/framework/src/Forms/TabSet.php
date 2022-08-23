@@ -79,7 +79,7 @@ class TabSet extends CompositeField
         }
 
         // Normalise children list
-        if (count($tabs) === 1 && (is_array($tabs[0]) || $tabs[0] instanceof FieldList)) {
+        if (count($tabs ?? []) === 1 && (is_array($tabs[0]) || $tabs[0] instanceof FieldList)) {
             $tabs = $tabs[0];
         }
 
@@ -178,13 +178,17 @@ class TabSet extends CompositeField
 
     public function getAttributes()
     {
-        return array_merge(
+        $attributes = array_merge(
             $this->attributes,
             [
                 'id' => $this->ID(),
                 'class' => $this->extraClass()
             ]
         );
+
+        $this->extend('updateAttributes', $attributes);
+
+        return $attributes;
     }
 
     /**

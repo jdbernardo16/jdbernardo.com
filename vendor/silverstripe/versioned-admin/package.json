@@ -48,7 +48,7 @@
     }
   },
   "devDependencies": {
-    "@silverstripe/eslint-config": "0.0.5",
+    "@silverstripe/eslint-config": "^0.1.0",
     "@silverstripe/webpack-config": "^1.5.0",
     "@storybook/addon-actions": "^3.4.11",
     "@storybook/addons": "^3.4.11",
@@ -83,6 +83,9 @@
     "redux": "^3.3.1",
     "url": "^0.11.0",
     "uuid": "^3.2.1"
+  },
+  "resolutions": {
+    "colors": "1.1.2"
   },
   "babel": {
     "presets": [
